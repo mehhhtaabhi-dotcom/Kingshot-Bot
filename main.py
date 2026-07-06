@@ -1,11 +1,13 @@
 import datetime
 import os
+import time
+import sys
 from threading import Thread
 import discord
 from discord import app_commands
 from discord.ext import tasks
 from flask import Flask
-import google.generativeai as genai
+from google import genai # ---> THIS IS THE NEW UPGRADED LIBRARY
 
 # ==================== CONFIGURATION ====================
 TOKEN = os.environ.get("DISCORD_TOKEN")
@@ -22,9 +24,8 @@ def home():
 def run_server():
     app.run(host="0.0.0.0", port=8080)
 
-# Configure the AI Brain
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Configure the NEW AI Brain
+ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 class KingshotAllianceBot(discord.Client):
 
@@ -35,7 +36,6 @@ class KingshotAllianceBot(discord.Client):
         self.tree = app_commands.CommandTree(self)
         self.active_schedules = []
         
-        # Load the Spartan Knowledge Base when the bot starts
         try:
             with open("spartan_knowledge.txt", "r") as f:
                 self.knowledge_base = f.read()
@@ -54,15 +54,12 @@ class KingshotAllianceBot(discord.Client):
         if message.author.bot:
             return
 
-        # Trigger AI if the bot is DMed OR tagged (@Zeus) in the server
         is_dm = isinstance(message.channel, discord.DMChannel)
         is_mentioned = self.user in message.mentions
 
         if is_dm or is_mentioned:
-            # Clean the tag out of the message if mentioned in a server
             user_text = message.content.replace(f'<@{self.user.id}>', '').strip()
 
-            # The Master System Prompt that gives Zeus his identity
             ai_prompt = f"""
             You are Zeus, the official AI assistant for Commander Kratos and the KNG Spartan Rage alliance in Kingdom 1649 of the game Kingshot.
             Your tone is helpful, strategic, welcoming, and strictly loyal to the alliance. 
@@ -74,16 +71,19 @@ class KingshotAllianceBot(discord.Client):
             User's Message: {user_text}
             """
             
-            # Show the "Zeus is typing..." indicator in Discord
             async with message.channel.typing():
                 try:
-                    response = model.generate_content(ai_prompt)
+                    # ---> THIS IS THE NEW GENERATION SYNTAX
+                    response = ai_client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=ai_prompt,
+                    )
                     await message.channel.send(response.text)
                 except Exception as e:
                     await message.channel.send("❌ My connection to the knowledge matrix was interrupted. Try again in a moment.")
                     print(f"AI Error: {e}")
 
-    # --- FEATURE 2: BACKGROUND CLOCK FOR SCHEDULED EVENTS ---
+    # --- EVENT SCHEDULER & RALLY COMMANDS ---
     @tasks.loop(seconds=60)
     async def check_game_events(self):
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -107,7 +107,6 @@ class KingshotAllianceBot(discord.Client):
 
 client = KingshotAllianceBot()
 
-# --- FEATURE 3: NEW DYNAMIC SCHEDULE COMMAND ---
 @client.tree.command(name="schedule", description="Schedule an automatic alliance announcement ping.")
 @app_commands.describe(event_name="Name of event (e.g. Bear Hunt)", time_utc="Time in 24h UTC format (e.g. 10:00)")
 async def schedule(interaction: discord.Interaction, event_name: str, time_utc: str):
@@ -126,7 +125,6 @@ async def schedule(interaction: discord.Interaction, event_name: str, time_utc: 
     await interaction.response.send_message(f"✅ **Success!** I will ping `@everyone` for **{event_name}** at exactly **{time_utc} UTC**.")
 
 
-# --- FEATURE 4: EMERGENCY RALLY ---
 @client.tree.command(name="rally", description="Issue an urgent coordinate alert to the entire alliance.")
 @app_commands.describe(target="Who are we hitting?", coordinates="Coordinates (e.g., X:150 Y:340)")
 async def rally(interaction: discord.Interaction, target: str, coordinates: str):
@@ -146,9 +144,6 @@ async def rally(interaction: discord.Interaction, target: str, coordinates: str)
 Thread(target=run_server).start()
 
 # --- AUTO-REBOOT SURVIVAL LOOP ---
-import time
-import sys
-
 while True:
     try:
         client.run(TOKEN)
@@ -156,4 +151,5 @@ while True:
         print(f"Discord API Blocked us (Likely a 429 Rate Limit): {e}")
         print("Initiating tactical retreat... forcing Render to reboot in 60 seconds.")
         time.sleep(60)
-        os._exit(1) # This command completely kills the container, forcing Render to assign a new IP
+        os._exit(1)
+    
