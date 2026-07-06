@@ -144,12 +144,5 @@ async def rally(interaction: discord.Interaction, target: str, coordinates: str)
 Thread(target=run_server).start()
 
 # --- AUTO-REBOOT SURVIVAL LOOP ---
-while True:
-    try:
-        client.run(TOKEN)
-    except Exception as e:
-        print(f"Discord API Blocked us (Likely a 429 Rate Limit): {e}")
-        print("Initiating tactical retreat... forcing Render to reboot in 60 seconds.")
-        time.sleep(60)
-        os._exit(1)
-    
+Thread(target=run_server).start()
+client.run(TOKEN)
