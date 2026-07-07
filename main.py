@@ -14,8 +14,8 @@ TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ANNOUNCEMENT_CHANNEL_ID = 1500543041625129122
 BASE_URL = "https://kingshot.net/api"  
-# Your persistent file URI
-FILE_URI = "https://generativelanguage.googleapis.com/v1beta/files/xo0ifcntm2rb"
+# Fixed: Using the relative file ID format required by the SDK
+FILE_URI = "files/xo0ifcntm2rb"
 # =======================================================
 
 app = Flask("")
@@ -89,9 +89,9 @@ class KingshotAllianceBot(discord.Client):
             
             async with message.channel.typing():
                 try:
-                    # Using the File API reference
+                    # Using the File API reference with the correct Lite model
                     response = ai_client.models.generate_content(
-                        model='gemini-1.5-flash',
+                        model='gemini-2.0-flash-lite-001',
                         contents=[
                             types.Part.from_uri(file_uri=FILE_URI, mime_type="text/plain"),
                             user_text
