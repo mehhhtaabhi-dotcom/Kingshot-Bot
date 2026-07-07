@@ -91,7 +91,7 @@ class KingshotAllianceBot(discord.Client):
                 try:
                     # Using the File API reference
                     response = ai_client.models.generate_content(
-                        model='gemini-2.0-flash-001',
+                        model='gemini-1.5-flash',
                         contents=[
                             types.Part.from_uri(file_uri=FILE_URI, mime_type="text/plain"),
                             user_text
