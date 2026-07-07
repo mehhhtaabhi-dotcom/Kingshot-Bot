@@ -1,0 +1,185 @@
+Welcome to the KNG Spartan Rage alliance! Commander Kratos expects all members to complete daily Watchtower missions.
+
+## 1. Heroes
+
+### Hero Profiles
+*   **Alcar:** Legendary, Infantry, Combat
+*   **Amadeus:** Legendary, Infantry, Combat
+*   **Amane:** Epic, Archer, Combat
+*   **Ava:** Legendary, Cavalry, Combat
+*   **Charles:** Legendary, Infantry, Combat
+*   **Chenko:** Epic, Cavalry, Combat
+*   **Diana:** Epic, Archer, Combat
+*   **Edwin:** Rare, Archer, Growth
+*   **Eric:** Legendary, Infantry, Combat
+*   **Fahd:** Epic, Infantry, Combat
+*   **Forrest:** Rare, Infantry, Growth
+*   **Gordon:** Epic, Cavalry, Combat
+*   **Helga:** Legendary, Infantry, Combat
+*   **Hilde:** Legendary, Cavalry, Combat
+*   **Howard:** Epic, Infantry, Combat
+*   **Jabel:** Legendary, Cavalry, Combat
+*   **Jaegar:** Legendary, Archer, Combat
+*   **Long Fei:** Legendary, Infantry, Combat
+*   **Margot:** Legendary, Cavalry, Combat
+*   **Marlin:** Legendary, Archer, Combat
+*   **Olive:** Rare, Cavalry, Growth
+*   **Petra:** Legendary, Cavalry, Combat
+*   **Quinn:** Epic, Archer, Combat
+*   **Rosa:** Legendary, Archer, Combat
+*   **Saul:** Legendary, Archer, Growth
+*   **Seth:** Rare, Infantry, Growth
+*   **Sophia:** Legendary, Cavalry, Combat
+*   **Thrud:** Legendary, Cavalry, Combat
+*   **Triton:** Legendary, Infantry, Combat
+*   **Wee & Woo:** Legendary, Archer, Combat
+*   **Yang:** Legendary, Archer, Combat
+*   **Yeonwoo:** Epic, Archer, Combat
+*   **Zoe:** Legendary, Infantry, Combat
+
+### Base Stats Structure
+*   **Alcar:** Conquest (Attack: 3,150, Def: 4,106, Health: 61,604), Expedition (Attack: +370.29%, Defense: +370.29%); Special Conquest (Attack: 638, Def: 832, Health: 12,487), Special Expedition (Lethality: +92.50%, Health: +92.50%)
+*   **Amadeus:** Conquest (Attack: 2,128, Def: 2,220, Health: 41,624), Expedition (Attack: +260.20%, Defense: +260.20%); Special Conquest (Attack: 431, Def: 562, Health: 8,437), Special Expedition (Lethality: +62.50%, Health: +62.50%)
+*   **Amane:** Conquest (Attack: 2,157, Def: 2,220, Health: 13,320), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Ava:** Conquest (Attack: 7,126, Def: 7,126, Health: 71,262), Expedition (Attack: +650.52%, Defense: +650.52%); Special Conquest (Attack: 1,444, Def: 1,444, Health: 14,445), Special Expedition (Lethality: +160.50%, Health: +160.50%)
+*   **Charles:** Conquest (Attack: 5,466, Def: 7,126, Health: 106,892), Expedition (Attack: +650.52%, Defense: +650.52%); Special Conquest (Attack: 1,107, Def: 1,444, Health: 21,667), Special Expedition (Lethality: +160.50%, Health: +160.50%)
+*   **Chenko:** Conquest (Attack: 1,776, Def: 2,220, Health: 17,760), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Diana:** Conquest (Attack: 2,157, Def: 2,220, Health: 13,320), Expedition (Attack: +110.08%, Defense: +110.08%)
+*   **Edwin:** Conquest (Attack: 1,442, Def: 2,220, Health: 14,430), Expedition (Attack: +90.07%, Defense: +90.07%)
+*   **Gordon:** Conquest (Attack: 1,776, Def: 2,220, Health: 17,760), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Helga:** Conquest (Attack: 1,873, Def: 2,220, Health: 36,630), Expedition (Attack: +200.16%, Defense: +200.16%); Special Conquest (Attack: 379, Def: 495, Health: 7,425), Special Expedition (Lethality: +55.50%, Health: +55.50%)
+*   **Hilde:** Conquest (Attack: 2,664, Def: 2,220, Health: 26,640), Expedition (Attack: +240.19%, Defense: +240.19%); Special Conquest (Attack: 540, Def: 540, Health: 5,400), Special Expedition (Lethality: +60.00%, Health: +60.00%)
+*   **Howard:** Conquest (Attack: 1,361, Def: 2,220, Health: 26,640), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Jabel:** Conquest (Attack: 2,220, Def: 2,220, Health: 22,200), Expedition (Attack: +200.16%, Defense: +200.16%); Special Conquest (Attack: 450, Def: 450, Health: 4,500), Special Expedition (Lethality: +50.00%, Health: +50.00%)
+*   **Jaegar:** Conquest (Attack: 4,045, Def: 3,330, Health: 24,974), Expedition (Attack: +290.23%, Defense: +290.23%); Special Conquest (Attack: 764, Def: 630, Health: 4,725), Special Expedition (Lethality: +70.00%, Health: +70.00%)
+*   **Long Fei:** Conquest (Attack: 4,545, Def: 5,927, Health: 88,911), Expedition (Attack: +444.35%, Defense: +444.35%); Special Conquest (Attack: 765, Def: 999, Health: 14,985), Special Expedition (Lethality: +111.00%, Health: +111.00%)
+*   **Margot:** Conquest (Attack: 4,106, Def: 4,106, Health: 41,070), Expedition (Attack: +370.29%, Defense: +370.29%); Special Conquest (Attack: 832, Def: 832, Health: 8,325), Special Expedition (Lethality: +92.50%, Health: +92.50%)
+*   **Marlin:** Conquest (Attack: 3,235, Def: 2,220, Health: 19,980), Expedition (Attack: +240.19%, Defense: +240.19%); Special Conquest (Attack: 655, Def: 540, Health: 4,050), Special Expedition (Lethality: +60.00%, Health: +60.00%)
+*   **Olive:** Conquest (Attack: 1,752, Def: 2,220, Health: 10,822), Expedition (Attack: +90.07%, Defense: +90.07%)
+*   **Petra:** Conquest (Attack: 3,330, Def: 3,330, Health: 33,300), Expedition (Attack: +290.23%, Defense: +290.23%); Special Conquest (Attack: 630, Def: 630, Health: 6,300), Special Expedition (Lethality: +70.00%, Health: +70.00%)
+*   **Quinn:** Conquest (Attack: 2,157, Def: 2,220, Health: 13,320), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Rosa:** Conquest (Attack: 4,989, Def: 4,106, Health: 30,802), Expedition (Attack: +370.29%, Defense: +370.29%); Special Conquest (Attack: 1,010, Def: 832, Health: 6,243), Special Expedition (Lethality: +92.50%, Health: +92.50%)
+*   **Saul:** Conquest (Attack: 2,697, Def: 2,220, Health: 16,650), Expedition (Attack: +200.16%, Defense: +200.16%); Special Conquest (Attack: 546, Def: 450, Health: 3,375), Special Expedition (Lethality: +50.00%, Health: +50.00%)
+*   **Seth:** Conquest (Attack: 1,106, Def: 2,220, Health: 21,644), Expedition (Attack: +90.07%, Defense: +90.07%)
+*   **Sophia:** Conquest (Attack: 7,127, Def: 7,127, Health: 71,289), Expedition (Attack: +540.43%, Defense: +540.43%); Special Conquest (Attack: 1,201, Def: 1,201, Health: 12,015), Special Expedition (Lethality: +133.50%, Health: +133.50%)
+*   **Wee & Woo:** Conquest (Attack: 8,656, Def: 7,126, Health: 53,446), Expedition (Attack: +650.52%, Defense: +650.52%); Special Conquest (Attack: 1,752, Def: 1,444, Health: 10,833), Special Expedition (Lethality: +160.50%, Health: +160.50%)
+*   **Yang:** Conquest (Attack: 8,657, Def: 7,127, Health: 53,465), Expedition (Attack: +540.43%, Defense: +540.43%); Special Conquest (Attack: 1,457, Def: 1,201, Health: 9,011), Special Expedition (Lethality: +133.50%, Health: +133.50%)
+*   **Yeonwoo:** Conquest (Attack: 2,157, Def: 2,220, Health: 13,320), Expedition (Attack: +140.11%, Defense: +140.11%)
+*   **Zoe:** Conquest (Attack: 2,043, Def: 2,664, Health: 39,960), Expedition (Attack: +240.19%, Defense: +240.19%); Special Conquest (Attack: 414, Def: 540, Health: 8,100), Special Expedition (Lethality: +60.00%, Health: +60.00%)
+
+### Skill Sets
+*   **Alcar:** Glorious Mark (invulnerable/-30-70% dmg taken, 2s), Boneshatter (70-98% attack dmg, +20% target dmg taken for 2s), Second Wind (Restores 30-42% attack HP/s for 5s), Rescuing Hands (-14-70% Inf/Arch dmg taken for 2 turns every 5 turns), Praetorian Will (+20-100% Inf dmg, +2-10% Cav/Arch dmg), Carpe Diem (+12-60% Inf dmg per attack, +5-25% target dmg taken for 1 turn); Special: Praetorian Guard (416,250), Flagbearer (Ally attack +30-42% for 2.5s), Vow of Honor (Defender Health +5-15%)
+*   **Amadeus:** Combo Slash (160-224% attack dmg per slash x3), Arcane Swordship (15-23% attack dmg to frontal foes), Onslaught (+16-48% attack >50% HP), Battle Ready (+5-25% Lethality), Way of the Blade (+5-25% attack), Unrighteous Strike (8-40% chance +50% dmg), Born Leader (+3-15% Lethality/Health); Special: Aegis of Fate (281,250), Double Parry (-10-30% dmg taken), Discernment (+5-15% Rally attack)
+*   **Amane:** Sakura Blossom (+1.5-3.5% attack, +2.5-4.5% attack speed for 4s), Fire Sigil (150-210% attack dmg), Divine Melody (+1-5% attack speed every 3 basic attacks), Tri-Phalanx (+5-25% attack), Exorcism (+10-50% Infirmary healing speed)
+*   **Ava:** Color Bomb (50-70% attack dmg every 0.5s for 3s), Corruption Bomb (25-35% attack dmg every 0.5s, +5-25% target dmg taken for 2s), Disguise Pigment (+25-75% defense), Dissolution (-5-25% enemy defense), Chiaroscuro (+10-50% enemy dmg taken for 2 turns every 4 turns), Light and Cold (+5-25% Lethality); Special: Chameleos (722,250), Irradiance (+25% dmg dealt, -5-25% target attack), Color Storm (+5-15% Rally Lethality)
+*   **Charles:** Vengeance (100-140% attack dmg, stun 1s, +20-100% attack for 2s), Parting Gift (200-280% AoE dmg), Nimble Soul (10-50% chance to reduce dmg taken 50%), Intimidation (-4-20% enemy Lethality), Iron Bodies (-4-20% dmg taken), Great Justice (+5-25% Health); Special: Justice Fist (722,250), Mechanic (Restores 7-35% HP <50% HP once, +6-30% defense), Shock and Awe (+3-15% Defender Health)
+*   **Chenko:** Burst Fire (55-75% attack dmg every 0.5s for 2s), Defense Upgrade (+25-70% defense), Weapon Upgrade (+8-24% attack), Stand of Arms (+5-25% Lethality), Shield Wall (-4-20% dmg taken)
+*   **Diana:** Incendiary Arrows (210-290% target dmg, 70-98% AoE dmg), Sharpshooter (+10-30% attack speed), Deadly Strike (+7-20% Crit rate), Iron Constitution (-10-20% stamina cost), Quick Paced (+20-100% march speed vs Beasts/Terrors)
+*   **Edwin:** Shrapnel Load (140-196% AoE dmg), Detonate (10-20% stun chance for 1-2s), Demolitions Expert (+5-25% Quarry output), Stone Mining (+5-25% Stone gathering speed)
+*   **Eric:** Ground Shock (120-168% attack dmg, -50% target attack speed for 4s), Veterancy (8-16% chance +8-20% defense for 2s), Hammer of Justice (80-112% attack dmg, 30% stun chance for 1s), Holy Warrior (-4-20% enemy attack), Conviction (-4-20% dmg taken), Exhortation (+5-25% Health); Special: Anvil of Truth (315,000), Blessed Hammer (+10-30% dmg), Vanguard (+5-15% Defender Defense)
+*   **Fahd:** Sandstorm (-1-5% enemy attack for 2s), Eagle Wings (+15-35% attack for 2s), Dune General (+10-30% attack speed), Desert Eclipse (-4-20% enemy dmg dealt), Pathfinder (+20-100% solo hunting march speed)
+*   **Forrest:** Axe Whirl (80-110% attack dmg per 0.5s for 3s), Razor Sharp (+10-30% dmg/sec), Woodland Inheritor (+5-25% Sawmill output), Master Woodcutter (+5-25% Wood gathering speed)
+*   **Gordon:** BBQ Feast (Restores 200-280% attack HP, +5-7% attack for 4s), Culinary Chaos (-10-30% dmg taken), Emergency Snack (Restores 50-70% attack HP every 5s), Super Nutrients (+5-25% Health), Trash Talk (+5-25% attack)
+*   **Helga:** Antler Assault (160-224% AoE dmg, stun 1s), Spear Charge (150-210% attack dmg), Fury (10% chance +4-12% attack for 3s), Oath of Guardian (8-40% chance -50% dmg taken), Echoes of Valhalla (+5-25% attack), Nature's Balance (+5-25% Lethality), Power of the Deer (+2-10% attack/defense absent); Special: Bands of Tyre (247,500), Valiant Fury (+10-30% dmg dealt), Zeal (+5-15% Rally Lethality)
+*   **Hilde:** Rejuvenating Plea (Restores 200-280% attack HP to allies), Redeemer (Restores 100-140% attack HP to weakest hero), Intimidation (140-196% attack dmg, disable 1s), Noble Path (+3-15% attack, +2-10% defense), Elixir of Strength (25% chance 120-200% dmg), Trial by Fire (8-40% chance -50% dmg taken); Special: Revelation (270,000), Holy Invocation (+30-70% healing), Fortitude (+5-15% Defender Health)
+*   **Howard:** Shielded Strike (200-280% AoE dmg, knockback), Joint Defense (+5-15% defense), Shield Block (-10-30% dmg taken), Defenders' Edge (-4-20% dmg taken), Weaken (-4-20% enemy attack)
+*   **Jabel:** Gallant Throw (180-252% AoE dmg, pin 1.5s), Brave the Storm (150-210% attack dmg), Persistence (+20-60% attack speed <50% HP), Rally Flag (8-40% chance -50% dmg taken), Hero's Domain (50% chance +10-50% dmg), Youthful Rage (+5-25% Lethality); Special: Greaves of Faith (225,000), Crimson Spirit (+10-30% dmg dealt), Divine Strength (+5-15% Defender Lethality)
+*   **Jaegar:** Fatal Attraction (160-224% attack dmg, stun 2s), Game of Chance (220-300% attack dmg or restore 50% attack HP), Rumormonger (+10-30% enemy dmg taken for 3s), The Tempest (20% chance +8-40% dmg dealt for 3 turns), The Resistance (20% chance -10-50% enemy Lethality for 2 turns), The Celebration (+5-25% Health); Special: Wanderwail (315,000), Sound of Silence (Silence 3-5s, 220-300% attack dmg), Hymn to Survival (+5-15% Defender Health)
+*   **Long Fei:** Ambrosia (+80-120% attack speed, CC immune for 4s), Above And Beyond (-20-60% dmg taken <50% HP), Mountain Mover (+16-48% attack <50% HP), Mighty Paragon (40% chance -10-50% dmg taken), Celestial Sustenance (+5-25% defense), Art of War (25% chance 120-200% dmg); Special: Immortal's Flask (499,500), Strong Brew (Ambrosia +1.5s, restore 15% HP of dmg dealt), Strategic Strike (+15% Defender attack)
+*   **Margot:** Ambush (300-420% AoE dmg), Parry (5-25% chance dodge all dmg), Stiletto (100-140% attack dmg, immobilize 1.5s), Warbringer (+5-25% attack), Subterfuge (4-20% chance dodge normal attacks), Sleight Hand (Cavalry 25% chance extra attack 120-200% dmg); Special: Revel Fang (416,250), Indefensible (40% chance 2nd attack 25-45% dmg), Pugilist (+5-15% Defender Lethality)
+*   **Marlin:** Tidal Rush (200-280% AoE dmg, immobilize 1.5s), Fermented Blow (50-70% AoE dmg), Lucky Hit (Stun 0.2-0.5s every 8-5 strikes), Wild Card (8-40% chance +50% dmg dealt), Rumhead (20% chance -10-50% enemy Lethality for 2 turns), Dynamo (50% chance +10-50% dmg dealt); Special: Mistweaver (270,000), Servant of Wine (Heals weakest hero 5-15% attack HP), Admiral of the Line (+5-15% Rally Lethality)
+*   **Olive:** Rain of Arrows (180-252% AoE dmg), Target Lock (+10-30% target dmg taken), Green Thumb (+5-25% Mill output), Forager's Luck (+5-25% Bread gathering speed)
+*   **Petra:** Dichotomoy (270-378% attack dmg, -20% target attack for 2s or stun 1.5s), Change of Fate (5-600% of 50-70% attack dmg), Turn Card (Restores 5-400% of 100-140% attack HP), Evil Eye (50% chance +10-50% target dmg taken), The Favor (50% chance +10-50% attack), The Shield (40% chance -10-50% dmg taken); Special: Fate's Writ (315,000), Weighted Deck (+30-150% fluctuation limits), Cosmic Eye (+5-15% Rally attack)
+*   **Quinn:** Headshot (400-560% attack dmg), Quickshot (+10-30% attack speed), Natural Selection (+10-30% dmg dealt), Precision Shot (-4-20% dmg taken), Burst Fire (50% chance +10-50% dmg dealt)
+*   **Rosa:** Battle Focus (Clears debuffs, +3-7% attack for 3-5s), Flutterfang (220-300% attack dmg), Swoon Chakra (-1-3% enemy attack speed, -40-60% enemy healing), Chaos Gambit (40% chance +10-50% dmg dealt), Rose of War (-4-20% enemy dmg dealt), Golden Rhythm (+6-30% Archer attack); Special: Aeolian (416,250), Night Reverie (+5-15% attack), Perihelion (+5-15% Rally Lethality)
+*   **Saul:** Rapidfire (55-75% attack dmg per hit, stun 2s), Final Prayer (+50-150% defense <50% HP), Superior Techniques (+10-30% attack speed), Taskforce Training (+2-10% defense, +3-15% health), Resourceful (+3-15% construction speed, -3-15% cost), Positional Batter (+5-25% Lethality); Special: Rabbitgear Cannon (225,000), Fearless Advance (+6-24% attack), Defend to Attack (+5-15% Defender attack)
+*   **Seth:** Hammer Burn (200-280% attack dmg), Armor Enhancement (-10-30% dmg taken), Burnished Iron (+5-25% Iron output), Craftsmanship (+5-25% Iron gathering speed)
+*   **Sophia:** Puppet Master (100-140% AoE dmg, confuse 1s), Scalding Mark (50-70% target dmg, +2-6% target dmg taken for 4s), Scalding Mark - Lash (+8-24% attack, Lash deals +4-12% dmg), Arcane Pact (8-40% chance -50% dmg taken every turn), Terror - Deathblow (Terror inflicts +40-200% Cav dmg for 1 turn every 2 turns), Terror - Annihilation (+15-75% dmg to Terrified); Special: Scarlet Rose (600,750), Eyes of Obedience (2-8% confuse chance for 1s), Queen of Night (+5-15% Defender Lethality)
+*   **Thrud:** Axe Flurry (60-84% AoE dmg x5), Brutal Throw (50-70% attack dmg, stun 1.5s), Feast of the Pack (+3-5% attack), Battle Hunger (-3-15% Inf/Arch dmg taken, +3-15% Inf/Arch dmg dealt), Reckless Charge (Cavalry 20% chance +20-100% dmg), Ancestral Guidance (Every 4 Cav attacks +5-25% dmg dealt, -5-25% dmg taken for 2 turns); Special: Bloodfang (499,500), Berserker's Edge (25-35% stun chance for 1-2s), Wolf-Kissed (+5-15% Rally Lethality)
+*   **Triton:** Tidewill (Invulnerable 2s, 100-140% AoE dmg), Regal Wrath (+8-24% attack, +16-48% defense for 4s), Striking Hit (20-28% attack dmg to random enemy), Command of Power (+5-25% defense), Warfare of Power (+6-30% skill dmg), Oath of Power (+4-20% Inf Health, +6-30% Cav/Arch Health); Special: Tidal Scepter (600,750), Magnetic Reformation (+10-30% dmg), Whale Call (+5-15% Defender Defense)
+*   **Wee & Woo:** High Ground (300-420% AoE dmg), Incendiaries (60-84% AoE dmg, 17-25% crater dmg every 0.5s for 2s), Frontal Support (+10-26% attack), Artillerymen (+3-15% attack, +2-10% Lethality), Chain Shelling (+6-30% dmg to Archer, +5-25% dmg to Infantry), Boom Boom (10-50% chance of 50% extra dmg); Special: Mortar (722,250), Zero Sympathy (+6-14% Hero/Escort attack speed for 5s), Landmines (+5-15% Defender Attack)
+*   **Yang:** Kin Throw (100-140% AoE dmg + return dmg), Combo (15-35% chance combo shot), Deadshot (+3-15% Crit Rate), Avalanche (Additional strike every 4 turns for 20-100% dmg), Ice Zone (Archers 40% chance +20-100% extra dmg), Ambush (8-40% chance +50% dmg dealt); Special: Frostkin (600,750), Quick Draw (40-56% attack dmg x5, 40-100% knockdown chance on Escort), Offensive Defense (+5-15% Rally Lethality)
+*   **Yeonwoo:** Petalbloom (100%, 125-175%, 150-210% AoE dmg), Falling Swallow (100-140% attack dmg, -30-50% target attack speed), Twin Fangs (+8-24% attack), On Guard (+5-25% Lethality), Well-Traveled (+3-15% research speed)
+*   **Zoe:** Shield Strike (60-84% attack dmg every 0.5s, +10-30% target dmg taken for 2s), Agony Rush (Restores 20-40% max HP <50% HP once per battle), Holy Might (+3-7% attack speed), Sundering Wound (20% chance 8-40% Sunder dmg per turn for 3 turns), Stoic (+5-25% attack), Infinite Arsenal (50% chance +10-50% enemy dmg taken); Special: The Unrighteous (270,000), Death Or Glory (+8-24% attack after Agony Rush), Dark Lady (+5-15% Defender Attack)
+
+### Upgrade Requirements
+
+| Stars / Tiers | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 | Tier 6 | Total |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | 1 | 1 | 2 | 2 | 2 | 2 | 10 |
+| 2 | 5 | 5 | 5 | 5 | 5 | 15 | 40 |
+| 3 | 15 | 15 | 15 | 15 | 15 | 40 | 115 |
+| 4 | 40 | 40 | 40 | 40 | 40 | 100 | 300 |
+| 5 | 100 | 100 | 100 | 100 | 100 | 100 | 600 |
+
+*(Applicable universally to all heroes)*
+
+### Acquisition Methods
+*   **Alcar:** Strongest Governor, Kingdom of Power, Daily Deals, Hero Rally, Mythic General Hero Shard, Swordland Shop.
+*   **Amadeus:** Hall of Governors, VIP Packs.
+*   **Amane:** Hero Recruitment, Epic General Hero Shard.
+*   **Ava:** Hall of Heroes.
+*   **Charles:** Hall of Governors, Daily Deals.
+*   **Chenko:** Path of Growth, Watchtower Intel, Hero Recruitment, Epic General Hero Shard.
+*   **Diana:** Epic General Hero Shard, Desert Trial.
+*   **Edwin:** Watchtower Intel, Hero Recruitment, Rare General Hero Shard.
+*   **Eric:** Hall of Heroes, Mythic General Hero Shard, Swordland Shop.
+*   **Fahd:** Hero Recruitment, Epic General Hero Shard.
+*   **Forrest:** Watchtower Intel, Hero Recruitment, Rare General Hero Shard.
+*   **Gordon:** Exploration, Watchtower Intel, Hero Recruitment, Epic General Hero Shard.
+*   **Helga:** 1st Purchase, VIP Packs.
+*   **Hilde:** Hall of Governors, Strongest Governor, Hall of Heroes, Daily Deals, Hero Rally, Mythic General Hero Shard.
+*   **Howard:** Exploration, Watchtower Intel, Hero Recruitment, Epic General Hero Shard.
+*   **Jabel:** 7 Daily Sign-in Gift, Jabel's Courage, Path of Growth, Watchtower Intel, Hero Recruitment, Hall of Heroes, Mythic General Hero Shard, Swordland Shop.
+*   **Jaegar:** Strongest Governor, Daily Deals, Hero Rally, Mythic General Hero Shard, Swordland Shop.
+*   **Long Fei:** Events, Hero Packs.
+*   **Margot:** Hall of Heroes, Mythic General Hero Shard, Swordland Shop.
+*   **Marlin:** Hall of Heroes, Daily Deals, Mythic General Hero Shard.
+*   **Olive:** Watchtower Intel, Hero Recruitment, Rare General Hero Shard.
+*   **Petra:** Hero Roulette, Mythic General Hero Shard, Swordland Shop.
+*   **Quinn:** Exploration, Watchtower Intel, Hero Recruitment, Epic General Hero Shard.
+*   **Rosa:** Hero Roulette, Mythic General Hero Shard, Swordland Shop.
+*   **Saul:** Hero Roulette, Hall of Heroes, Daily Deals, Mythic General Hero Shard, Swordland Shop.
+*   **Seth:** Watchtower Intel, Hero Recruitment, Rare General Hero Shard.
+*   **Sophia:** Hero Roulette.
+*   **Thrud:** Hero Roulette.
+*   **Triton:** Hero Roulette.
+*   **Wee & Woo:** Hero Roulette.
+*   **Yang:** Hero Roulette, Daily Deals.
+*   **Yeonwoo:** Hero Recruitment, Epic General Hero Shard.
+*   **Zoe:** Hero Roulette, Hall of Heroes, Daily Deals, Mythic General Hero Shard.
+
+### Lore & Backstory
+*   **Alcar:** Former Praetorian Guard Flagbearer. He survived impossible battles, dealing with the agony of betrayal and seeking redemption.
+*   **Amadeus:** An outlaw swordsman raised by Robin Hood of the Unjust League, known for a rough exterior masking a golden heart.
+*   **Amane:** A devoted shrine maiden who dedicated her life to seeking a legendary divine tree capable of restoring life and holding back death.
+*   **Ava:** A masterful young painter who secretly operates as a vigilante graffiti hero, punishing corrupt villains with dual paint guns.
+*   **Charles:** A crown prince who disliked his royal duties, built a piloted mech (Angel of Justice) to escape, but ended up saving the capital during an invasion.
+*   **Chenko:** A prodigy inventor, street urchin, and fugitive who wields a terrifying blunderbuss called a "lightning stick".
+*   **Diana:** The youngest red-haired wilderness ranger cavalry member, rescued as a swaddled infant by the mercenary corps.
+*   **Edwin:** A strong, silent stone quarry foreman who suffers from trauma and guilt after a disastrous mining accident.
+*   **Eric:** "The Pious One," a former paladin who wields a warhammer and defected from the corrupt Ecclesia to punish hypocrites.
+*   **Fahd:** A merciless outlander battlefield general with an eagle companion, adored by children for his vivid storytelling.
+*   **Forrest:** A giant bald woodcutter with a scarred face, terrifying to enemies but secretly gentle and kind to children.
+*   **Gordon:** A top chef with a fiery temper and golden heart, who orchestrated a prison break for his friend Howard.
+*   **Helga:** A refined noble lady who transforms into a terrifying Valkyrie on the battlefield, defying a Viking King.
+*   **Hilde:** A blind monk from a noble family, who brings joy to the church and uses medical knowledge to heal the world.
+*   **Howard:** A former Imperial Cavalry guardsman arrested unjustly, rescued from an imperial prison by Gordon, and became a village sentry.
+*   **Jabel:** The idealistic First Paladin of the Imperial Cavalry, survived a bandit raid as a child and believes only conviction makes a true paladin.
+*   **Jaegar:** A flamboyant traveling bard and poet who is secretly the spymaster "Y," leading The Wander covert intelligence web.
+*   **Long Fei:** A wandering martial artist guided by his master Marlin, carrying a mysterious gourd of wine that he waits for the right time to open.
+*   **Margot:** "Revel Fang," a comedic mime who doubles as a deadly assassin, driven by a vendetta to take down the town's governor.
+*   **Marlin:** A drunken admiral and master to Long Fei, who mysteriously sails a heavily damaged ship from the north.
+*   **Olive:** A gentle baker turned markswoman, rumored by locals to actually be a runaway princess from a northern land.
+*   **Petra:** A 14-year-old royal fortune-teller whose unparalleled luck and tarot card manipulation tricked General Cesares into a retreat.
+*   **Quinn:** A hedonistic crossbow marksman and former disgraced idealistic senator whose villa was burned down by his political enemies.
+*   **Rosa:** A star tavern dancer who commands the spotlight but transforms into a wild "Rose of War," fighting rebels to inspire her town.
+*   **Saul:** A logistics master hiding behind a forced smile, the sole survivor of the doomed Pilgrimage Alliance expedition to the cursed Golden City.
+*   **Seth:** A humble blacksmith who writes thrilling horror novels and biting social commentary by night.
+*   **Sophia:** The immortal Queen of the Night, arrives in a pitch-black carriage to punish cruel men and views eternal life as a curse.
+*   **Thrud:** "Wolf-Kissed" Viking legend and dual-axe wielder, who granted her former chief Ivar Ironfist an honorable death in battle.
+*   **Triton:** An ancient warrior from the Age of Kings, preserved in a stasis capsule by Tide King Atlas to carry on the legacy of the Tides.
+*   **Wee & Woo:** Inseparable twins; Woo is the genius inventor of their mortar cannon, and Wee handles the heavy lifting and logistics.
+*   **Yang:** The "Winter Huntress" from the frozen wilds, an agile sniper with a snowy origin and a mischievous, chilly sense of humor.
+*   **Yeonwoo:** A passionate and meticulous swordswoman raised and trained by her master/father, constantly honing her blade and her principles.
+*   **Zoe:** A ruthless frontline vanguard raised by the Unjust League, her magical hair changes color with her mood as she relentlessly hunts her prey.
