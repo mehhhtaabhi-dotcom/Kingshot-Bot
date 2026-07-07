@@ -2,19 +2,21 @@ import datetime
 import os
 import time
 import sys
-import aiohttp  # ---> ADDED FOR LIVE API FETCHING
+import aiohttp
+import requests  # ---> ADDED FOR FUNCTION CALLING
 from threading import Thread
 import discord
 from discord import app_commands
 from discord.ext import tasks
 from flask import Flask
-from google import genai 
+from google import genai
+from google.genai import types  # ---> ADDED FOR FUNCTION CALLING
 
 # ==================== CONFIGURATION ====================
 TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ANNOUNCEMENT_CHANNEL_ID = 1500543041625129122
-BASE_URL = "https://kingshot.net/api"  # ---> LIVE API ROOT
+BASE_URL = "https://kingshot.net/api"  
 # =======================================================
 
 app = Flask("")
@@ -28,6 +30,49 @@ def run_server():
 
 # Configure the NEW AI Brain
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
+
+
+# =======================================================
+# --- GEMINI AI TOOLS (FUNCTION CALLING) ---
+# =======================================================
+def get_gift_codes() -> str:
+    """Fetches all currently active KingShot gift codes and their expiration dates. Use this when asked for loot, codes, or rewards."""
+    try:
+        res = requests.get(f"{BASE_URL}/gift-codes")
+        if res.status_code == 200:
+            codes = res.json().get("data", {}).get("giftCodes", [])
+            return str(codes) if codes else "No active codes right now."
+        return "Failed to fetch codes."
+    except Exception:
+        return "API connection error."
+
+def get_player_data(player_id: str) -> str:
+    """Fetches live player data (name, kingdom, level) using their numerical KingShot Account ID. Use this to verify players."""
+    try:
+        res = requests.get(f"{BASE_URL}/player-info?playerId={player_id}")
+        if res.status_code == 200:
+            return str(res.json().get("data", {}))
+        elif res.status_code == 429:
+            return "Rate limited (Max 6 per minute). Tell the user to wait a moment."
+        return "Player not found."
+    except Exception:
+        return "API connection error."
+
+def get_kvk_history(kingdom_id: int) -> str:
+    """Fetches the latest Kingdom vs Kingdom (KvK) war records for a specific server/kingdom number. Use this to check war history or castle captures."""
+    try:
+        res1 = requests.get(f"{BASE_URL}/kvk/matches?kingdom_a={kingdom_id}&limit=1")
+        if res1.status_code == 200 and res1.json().get("data"):
+            return str(res1.json()["data"][0])
+            
+        res2 = requests.get(f"{BASE_URL}/kvk/matches?kingdom_b={kingdom_id}&limit=1")
+        if res2.status_code == 200 and res2.json().get("data"):
+            return str(res2.json()["data"][0])
+            
+        return "No recent KvK match data found for that kingdom."
+    except Exception:
+        return "API connection error."
+
 
 class KingshotAllianceBot(discord.Client):
 
@@ -51,7 +96,7 @@ class KingshotAllianceBot(discord.Client):
         print(f"👑 Kingshot AI is online as {self.user}!")
         await self.tree.sync()
 
-    # --- THE NEW AI CHAT ENGINE ---
+    # --- THE NEW AI CHAT ENGINE (WITH TOOLS) ---
     async def on_message(self, message):
         if message.author.bot:
             return
@@ -62,22 +107,27 @@ class KingshotAllianceBot(discord.Client):
         if is_dm or is_mentioned:
             user_text = message.content.replace(f'<@{self.user.id}>', '').strip()
 
-            ai_prompt = f"""
+            system_prompt = f"""
             You are Zeus, the official AI assistant for Commander Kratos and the KNG Spartan Rage alliance in Kingdom 1649 of the game Kingshot.
             Your tone is helpful, strategic, welcoming, and strictly loyal to the alliance. 
-            Answer the user's question using ONLY the knowledge base provided below. If the answer is not in the knowledge base, advise them to ask Commander Kratos.
+            You have access to live KingShot API tools. Use them if the user asks for active gift codes, player data, or KvK war history.
+            Answer questions using ONLY your tools or the knowledge base provided below. 
+            If you cannot find the answer, advise them to ask Commander Kratos.
             
             KNOWLEDGE BASE:
             {self.knowledge_base}
-            
-            User's Message: {user_text}
             """
             
             async with message.channel.typing():
                 try:
                     response = ai_client.models.generate_content(
                         model='gemini-2.5-flash',
-                        contents=ai_prompt,
+                        contents=user_text,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_prompt,
+                            tools=[get_gift_codes, get_player_data, get_kvk_history],
+                            temperature=0.7
+                        )
                     )
                     await message.channel.send(response.text)
                 except Exception as e:
@@ -289,4 +339,3 @@ async def kvk_report(interaction: discord.Interaction, kingdom: int = 1649):
 # =======================================================
 Thread(target=run_server).start()
 client.run(TOKEN)
-
