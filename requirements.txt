@@ -1,3 +1,4 @@
 discord.py
 Flask
 google-genai
+aiohttp
