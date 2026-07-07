@@ -72,19 +72,12 @@ class KingshotAllianceBot(discord.Client):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
         self.active_schedules = []
-        try:
-            with open("spartan_knowledge.txt", "r") as f:
-                self.knowledge_base = f.read()
-        except FileNotFoundError:
-            self.knowledge_base = "No knowledge base found."
 
     async def setup_hook(self):
         self.check_game_events.start()
 
     async def on_ready(self):
         print(f"👑 Kingshot AI is online as {self.user}!")
-        # Syncing removed from here to prevent 429 errors. 
-        # Manually sync only when adding new slash commands.
 
     async def on_message(self, message):
         if message.author.bot: return
@@ -92,20 +85,22 @@ class KingshotAllianceBot(discord.Client):
             user_text = message.content.replace(f'<@{self.user.id}>', '').strip()
             async with message.channel.typing():
                 try:
-                    # Using the latest Gemini model
+                    # Optimized: No file injection here. 
+                    # The model will use its training data and your provided tools.
                     response = ai_client.models.generate_content(
                         model='gemini-2.0-flash-001',
                         contents=user_text,
                         config=types.GenerateContentConfig(
-                            system_instruction=f"You are Zeus, AI for KNG Spartan Rage. Use tools: {self.knowledge_base}",
+                            system_instruction="You are Zeus, AI for KNG Spartan Rage. You are a tactical expert and strategic advisor for Kingshot. Answer concisely and use tools for real-time data.",
                             tools=[get_gift_codes, get_player_data, get_kvk_history],
                             temperature=0.7
                         )
                     )
                     await message.channel.send(response.text)
                 except Exception as e:
-                    await message.channel.send("❌ Connection interrupted.")
-                    print(f"AI Error: {e}")
+                    await message.channel.send("❌ Connection interrupted. Please try again.")
+                    # This print will help you debug in your server logs
+                    print(f"AI Error details: {repr(e)}")
 
     @tasks.loop(seconds=60)
     async def check_game_events(self):
