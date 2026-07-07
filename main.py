@@ -2,17 +2,19 @@ import datetime
 import os
 import time
 import sys
+import aiohttp  # ---> ADDED FOR LIVE API FETCHING
 from threading import Thread
 import discord
 from discord import app_commands
 from discord.ext import tasks
 from flask import Flask
-from google import genai # ---> THIS IS THE NEW UPGRADED LIBRARY
+from google import genai 
 
 # ==================== CONFIGURATION ====================
 TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ANNOUNCEMENT_CHANNEL_ID = 1500543041625129122
+BASE_URL = "https://kingshot.net/api"  # ---> LIVE API ROOT
 # =======================================================
 
 app = Flask("")
@@ -73,7 +75,6 @@ class KingshotAllianceBot(discord.Client):
             
             async with message.channel.typing():
                 try:
-                    # ---> THIS IS THE NEW GENERATION SYNTAX
                     response = ai_client.models.generate_content(
                         model='gemini-2.5-flash',
                         contents=ai_prompt,
@@ -106,6 +107,65 @@ class KingshotAllianceBot(discord.Client):
         await self.wait_until_ready()
 
 client = KingshotAllianceBot()
+
+
+# =======================================================
+# --- LIVE API ASYNC ENGINE ---
+# =======================================================
+async def fetch_active_codes():
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(f"{BASE_URL}/gift-codes") as response:
+                if response.status == 200:
+                    json_data = await response.json()
+                    return json_data.get("data", {}).get("giftCodes", [])
+                return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
+
+async def fetch_player_data(player_id: str):
+    async with aiohttp.ClientSession() as session:
+        try:
+            params = {"playerId": player_id}
+            async with session.get(f"{BASE_URL}/player-info", params=params) as response:
+                if response.status == 200:
+                    json_data = await response.json()
+                    return json_data.get("data", {})
+                elif response.status == 429:
+                    return "RATE_LIMIT"
+                return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
+
+async def fetch_kvk_history(kingdom_id: int):
+    async with aiohttp.ClientSession() as session:
+        try:
+            params = {"kingdom_a": kingdom_id, "limit": 1}
+            async with session.get(f"{BASE_URL}/kvk/matches", params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    matches = data.get("data", [])
+                    if matches:
+                        return matches[0]
+            
+            params = {"kingdom_b": kingdom_id, "limit": 1}
+            async with session.get(f"{BASE_URL}/kvk/matches", params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    matches = data.get("data", [])
+                    if matches:
+                        return matches[0]
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
+
+
+# =======================================================
+# --- GLOBAL SLASH COMMAND INTERFACE ---
+# =======================================================
 
 @client.tree.command(name="schedule", description="Schedule an automatic alliance announcement ping.")
 @app_commands.describe(event_name="Name of event (e.g. Bear Hunt)", time_utc="Time in 24h UTC format (e.g. 10:00)")
@@ -141,8 +201,92 @@ async def rally(interaction: discord.Interaction, target: str, coordinates: str)
     embed.set_footer(text=f"Issued by Commander {interaction.user.display_name}")
     await interaction.followup.send(content="@everyone", embed=embed)
 
-Thread(target=run_server).start()
 
-# --- AUTO-REBOOT SURVIVAL LOOP ---
+# --- NEW COMPLEMENTARY API UTILITIES ---
+
+@client.tree.command(name="giftcodes", description="Fetch all currently active KingShot gift codes!")
+async def giftcodes(interaction: discord.Interaction):
+    await interaction.response.defer() 
+    codes = await fetch_active_codes()
+    if not codes:
+        await interaction.followup.send("❌ Failed to retrieve active codes. Try again later.")
+        return
+        
+    embed = discord.Embed(title="⚔️ Active KingShot Gift Codes ⚔️", color=discord.Color.gold())
+    for item in codes:
+        code_str = item.get("code", "UNKNOWN")
+        expires = item.get("expiresAt", "No Expiration Displayed")
+        if expires and "T" in expires:
+            expires = expires.split("T")[0]
+        embed.add_field(name=f"🎁 Code: {code_str}", value=f"Expires: {expires}", inline=False)
+        
+    embed.set_footer(text="Make sure to redeem these inside your settings panel!")
+    await interaction.followup.send(embed=embed)
+
+
+@client.tree.command(name="verify-player", description="Look up a player's real-time level and verification profile.")
+@app_commands.describe(player_id="The unique numerical in-game ID of the player")
+async def verify_player(interaction: discord.Interaction, player_id: str):
+    await interaction.response.defer()
+    player = await fetch_player_data(player_id)
+    
+    if player == "RATE_LIMIT":
+        await interaction.followup.send("⚠️ API rate limit reached (Max 6 checks/min). Wait a moment and try again.")
+        return
+    elif not player:
+        await interaction.followup.send(f"❌ Could not find a KingShot player with ID: `{player_id}`.")
+        return
+        
+    name = player.get("name", "Unknown")
+    kingdom = player.get("kingdom", "Unknown")
+    level = player.get("levelRenderedDetailed", f"Level {player.get('level', '??')}")
+    avatar_url = player.get("profilePhoto")
+    
+    embed = discord.Embed(title=f"👤 Player Intel: {name}", color=discord.Color.blue())
+    embed.add_field(name="Account ID", value=player_id, inline=True)
+    embed.add_field(name="Home Kingdom", value=f"Server {kingdom}", inline=True)
+    embed.add_field(name="Current Strength", value=level, inline=True)
+    if avatar_url:
+        embed.set_thumbnail(url=avatar_url)
+    embed.set_footer(text="Data compiled live via KingShot API Core.")
+    await interaction.followup.send(embed=embed)
+
+
+@client.tree.command(name="kvk-report", description="Pull the latest Kingdom vs Kingdom battle records.")
+@app_commands.describe(kingdom="The server number to check (Defaults to our home, 1649)")
+async def kvk_report(interaction: discord.Interaction, kingdom: int = 1649):
+    await interaction.response.defer()
+    match = await fetch_kvk_history(kingdom)
+    
+    if not match:
+        await interaction.followup.send(f"❌ No recent KvK match data found for Server {kingdom}.")
+        return
+        
+    attacker = match.get("attacker", "Unknown")
+    defender = match.get("defender", "Unknown")
+    castle_winner = match.get("castle_winner", "Unknown")
+    castle_captured = match.get("castle_captured", False)
+    season_title = match.get("kvk_title", "Recent KvK")
+    
+    won_castle = (castle_winner == kingdom)
+    status_emoji = "🏆" if won_castle else "💀"
+    
+    embed = discord.Embed(
+        title=f"⚔️ KvK War Report: Server {kingdom} ⚔️",
+        description=f"**Season:** {season_title}",
+        color=discord.Color.green() if won_castle else discord.Color.red()
+    )
+    embed.add_field(name="Attacker", value=f"Server {attacker}", inline=True)
+    embed.add_field(name="Defender", value=f"Server {defender}", inline=True)
+    embed.add_field(name="Castle Status", value="Breached/Captured" if castle_captured else "Successfully Defended", inline=False)
+    embed.add_field(name="Outcome", value=f"{status_emoji} Server {castle_winner} secured the Castle!", inline=False)
+    embed.set_footer(text="Data compiled live via KingShot API Core.")
+    await interaction.followup.send(embed=embed)
+
+
+# =======================================================
+# --- IGNITION SEQUENCE ---
+# =======================================================
 Thread(target=run_server).start()
 client.run(TOKEN)
+
