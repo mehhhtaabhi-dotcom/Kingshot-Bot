@@ -1,8 +1,5 @@
 import datetime
 import os
-import time
-import sys
-import aiohttp
 import requests 
 from threading import Thread
 import discord
@@ -17,6 +14,8 @@ TOKEN = os.environ.get("DISCORD_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ANNOUNCEMENT_CHANNEL_ID = 1500543041625129122
 BASE_URL = "https://kingshot.net/api"  
+# Your persistent file URI
+FILE_URI = "https://generativelanguage.googleapis.com/v1beta/files/xo0ifcntm2rb"
 # =======================================================
 
 app = Flask("")
@@ -74,7 +73,10 @@ class KingshotAllianceBot(discord.Client):
         self.active_schedules = []
 
     async def setup_hook(self):
+        # Register slash commands
+        await self.tree.sync()
         self.check_game_events.start()
+        print("Slash commands synced successfully.")
 
     async def on_ready(self):
         print(f"👑 Kingshot AI is online as {self.user}!")
@@ -83,23 +85,27 @@ class KingshotAllianceBot(discord.Client):
         if message.author.bot: return
         if self.user in message.mentions or isinstance(message.channel, discord.DMChannel):
             user_text = message.content.replace(f'<@{self.user.id}>', '').strip()
+            if not user_text: return
+            
             async with message.channel.typing():
                 try:
-                    # Optimized: No file injection here. 
-                    # The model will use its training data and your provided tools.
+                    # Using the File API reference
                     response = ai_client.models.generate_content(
                         model='gemini-2.0-flash-001',
-                        contents=user_text,
+                        contents=[
+                            types.Part.from_uri(file_uri=FILE_URI, mime_type="text/plain"),
+                            user_text
+                        ],
                         config=types.GenerateContentConfig(
-                            system_instruction="You are Zeus, AI for KNG Spartan Rage. You are a tactical expert and strategic advisor for Kingshot. Answer concisely and use tools for real-time data.",
+                            system_instruction="You are Zeus, AI for KNG Spartan Rage. Use the provided file as your official knowledge base to answer tactical questions.",
                             tools=[get_gift_codes, get_player_data, get_kvk_history],
                             temperature=0.7
                         )
                     )
                     await message.channel.send(response.text)
                 except Exception as e:
-                    await message.channel.send("❌ Connection interrupted. Please try again.")
-                    # This print will help you debug in your server logs
+                    # Detailed error reporting
+                    await message.channel.send(f"❌ Error occurred: {str(e)}")
                     print(f"AI Error details: {repr(e)}")
 
     @tasks.loop(seconds=60)
