@@ -1,124 +1,149 @@
-import datetime
 import os
-import requests 
-from threading import Thread
 import discord
-from discord import app_commands
-from discord.ext import tasks
-from flask import Flask
+from discord.ext import commands
 from google import genai
-from google.genai import types 
+from google.genai import types
+import asyncio
+import time
+from flask import Flask
+from threading import Thread
 
-# ==================== CONFIGURATION ====================
-TOKEN = os.environ.get("DISCORD_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-ANNOUNCEMENT_CHANNEL_ID = 1500543041625129122
-BASE_URL = "https://kingshot.net/api"  
-# Fixed: Using the relative file ID format required by the SDK
-FILE_URI = "files/xo0ifcntm2rb"
-# =======================================================
+# --- 1. CONFIGURATION (SECURED VIA RENDER ENVIRONMENT VARIABLES) ---
+TOKEN = os.getenv("DISCORD_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-app = Flask("")
+ALLIANCE_CHANNEL_ID = 123456789012345678  # 👈 Paste your 18-digit channel ID here
 
-@app.route("/")
+# Failsafe: Stops the bot from crashing silently if keys are missing
+if not TOKEN or not GEMINI_API_KEY:
+    print("❌ CRITICAL ERROR: Missing DISCORD_TOKEN or GEMINI_API_KEY in Render Environment Variables!")
+    exit(1)
+
+# Initialize the GenAI client (It automatically reads the GEMINI_API_KEY environment variable!)
+client = genai.Client()
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# --- 2. THE UPTIMEROBOT WEB SERVER ---
+app = Flask(__name__)
+
+@app.route('/')
 def home():
-    return "Kingshot AI Bot is awake!"
+    return "👑 Zeus is awake and watching the gates!"
 
-def run_server():
-    app.run(host="0.0.0.0", port=8080)
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
 
-# Configure the AI Brain
-ai_client = genai.Client(api_key=GEMINI_API_KEY)
+# --- 3. THE DYNAMIC CLOUD ROUTER ---
+def get_cloud_file_id(user_message):
+    msg = user_message.lower()
+    
+    keywords_stats = ["stat", "attack", "defense", "def ", "health", "conquest", "expedition", "lethality"]
+    keywords_skills = ["skill", "ability", "glorious mark", "combo", "passive", "special weapon", "stun", "aoe", "heal"]
+    keywords_upgrade = ["upgrade", "star", "tier", "requirement", "table", "level up", "cost"]
+    keywords_acquire = ["get", "acquire", "unlock", "find", "roulette", "governor", "recruitment", "pack", "shop", "shard"]
+    keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
+    
+    if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
+        return "files/dk5ougy7c5qo" # alliance_rule.txt
+    elif any(w in msg for w in keywords_stats):
+        return "files/y979bgfrjw1d" # Base stats Structure.txt
+    elif any(w in msg for w in keywords_skills):
+        return "files/qu4n6174euyr" # Skill sets.txt
+    elif any(w in msg for w in keywords_upgrade):
+        return "files/elwoka9a10b9" # Upgrade requirements.txt
+    elif any(w in msg for w in keywords_acquire):
+        return "files/aat3flf0swyz" # Acquisition Methods.txt
+    elif any(w in msg for w in keywords_lore):
+        return "files/m3g8qp0vn5p3" # Lore & Backstory.txt
+    else:
+        return "files/v7n4tt3csbn3" # Kingshot_heroes.txt (Default)
 
-# =======================================================
-# --- GEMINI AI TOOLS (FUNCTION CALLING) ---
-# =======================================================
-def get_gift_codes() -> str:
-    """Fetches all currently active KingShot gift codes."""
-    try:
-        res = requests.get(f"{BASE_URL}/gift-codes", timeout=5)
-        if res.status_code == 200:
-            codes = res.json().get("data", {}).get("giftCodes", [])
-            return str(codes) if codes else "No active codes."
-        return "Failed to fetch codes."
-    except Exception:
-        return "API connection error."
+# --- 4. DISCORD BOT ACTIONS ---
+@bot.event
+async def on_ready():
+    print(f"👑 Zeus is online, routed to Google Cloud, and safely anchored on Render!")
 
-def get_player_data(player_id: str) -> str:
-    """Fetches live player data by Account ID."""
-    try:
-        res = requests.get(f"{BASE_URL}/player-info?playerId={player_id}", timeout=5)
-        if res.status_code == 200:
-            return str(res.json().get("data", {}))
-        return "Player not found."
-    except Exception:
-        return "API connection error."
+@bot.event
+async def on_member_join(member):
+    channel = bot.get_channel(ALLIANCE_CHANNEL_ID)
+    if channel:
+        welcome_message = (
+            f"🛡️ **Welcome to KNG Spartan Rage, {member.mention}!**\n"
+            f"Prepare for battle. I am Zeus, the alliance AI. If you need to check our rules or hero profiles, just ping `@Zeus`!"
+        )
+        await channel.send(welcome_message)
 
-def get_kvk_history(kingdom_id: int) -> str:
-    """Fetches latest KvK war records for a kingdom."""
-    try:
-        res1 = requests.get(f"{BASE_URL}/kvk/matches?kingdom_a={kingdom_id}&limit=1", timeout=5)
-        if res1.status_code == 200 and res1.json().get("data"):
-            return str(res1.json()["data"][0])
-        return "No recent KvK data."
-    except Exception:
-        return "API connection error."
+@bot.command()
+async def remind(ctx, hours: float, *, event_name: str):
+    channel = bot.get_channel(ALLIANCE_CHANNEL_ID)
+    if not channel:
+        await ctx.send("❌ Error: Alliance Channel ID is missing or incorrect.")
+        return
 
-class KingshotAllianceBot(discord.Client):
-    def __init__(self):
-        intents = discord.Intents.default()
-        intents.message_content = True
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
-        self.active_schedules = []
+    seconds_total = int(hours * 3600)
+    warning_seconds = seconds_total - 300
+    target_time = int(time.time()) + seconds_total
 
-    async def setup_hook(self):
-        # Register slash commands
-        await self.tree.sync()
-        self.check_game_events.start()
-        print("Slash commands synced successfully.")
+    await channel.send(
+        f"@everyone ⚔️ **ALLIANCE ALERT: {event_name.upper()}**\n"
+        f"Event begins in **<t:{target_time}:R>**! (<t:{target_time}:t>)\n"
+        f"*I will sound the 5-minute warning.*"
+    )
+    
+    await ctx.send(f"✅ Timer set for {hours} hours.")
 
-    async def on_ready(self):
-        print(f"👑 Kingshot AI is online as {self.user}!")
+    if warning_seconds > 0:
+        await asyncio.sleep(warning_seconds)
+        await channel.send(f"@everyone ⚠️ **5-MINUTE WARNING!** Prepare for {event_name}! (<t:{target_time}:R>)")
+        await asyncio.sleep(300)
+    else:
+        await asyncio.sleep(seconds_total)
 
-    async def on_message(self, message):
-        if message.author.bot: return
-        if self.user in message.mentions or isinstance(message.channel, discord.DMChannel):
-            user_text = message.content.replace(f'<@{self.user.id}>', '').strip()
-            if not user_text: return
-            
+    await channel.send(f"@everyone 🔥 **IT IS TIME! {event_name.upper()} HAS BEGUN!** Charge!")
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    if bot.user in message.mentions:
+        user_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
+        
+        if user_text:
             async with message.channel.typing():
                 try:
-                    # Using the File API reference with the correct Lite model
-                    response = ai_client.models.generate_content(
-                        model='gemini-2.0-flash-lite-001',
-                        contents=[
-                            types.Part.from_uri(file_uri=FILE_URI, mime_type="text/plain"),
-                            user_text
-                        ],
-                        config=types.GenerateContentConfig(
-                            system_instruction="You are Zeus, AI for KNG Spartan Rage. Use the provided file as your official knowledge base to answer tactical questions.",
-                            tools=[get_gift_codes, get_player_data, get_kvk_history],
-                            temperature=0.7
-                        )
+                    target_file_id = get_cloud_file_id(user_text)
+                    uploaded_file = client.files.get(name=target_file_id)
+                    
+                    sys_instruct = (
+                        "You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
+                        "IMPORTANT: Answer the query accurately based ONLY on the provided document context. "
+                        "Do not invent stats or rules."
                     )
-                    await message.channel.send(response.text)
+                    config = types.GenerateContentConfig(system_instruction=sys_instruct)
+                    
+                    response = await client.aio.models.generate_content(
+                        model='gemini-2.5-flash-lite',
+                        contents=[uploaded_file, user_text],
+                        config=config
+                    )
+                    
+                    if response.text:
+                        await message.channel.send(response.text)
+                    else:
+                        await message.channel.send("⚠️ Zeus returned an empty response.")
                 except Exception as e:
-                    # Detailed error reporting
-                    await message.channel.send(f"❌ Error occurred: {str(e)}")
-                    print(f"AI Error details: {repr(e)}")
+                    await message.channel.send(f"❌ Gemini API Error: {str(e)}")
+    
+    await bot.process_commands(message)
 
-    @tasks.loop(seconds=60)
-    async def check_game_events(self):
-        now = datetime.datetime.now(datetime.timezone.utc)
-        for event in self.active_schedules[:]:
-            if event["time"] == now.strftime("%H:%M"):
-                channel = self.get_channel(ANNOUNCEMENT_CHANNEL_ID)
-                if channel: await channel.send(f"@everyone Event starting: {event['name']}")
-                self.active_schedules.remove(event)
-
-client = KingshotAllianceBot()
-
-# --- IGNITION SEQUENCE ---
-Thread(target=run_server, daemon=True).start()
-client.run(TOKEN)
+# --- 5. IGNITION ---
+if __name__ == "__main__":
+    # Start the Flask web server on a separate thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
+    
+    # Start the Discord bot
+    bot.run(TOKEN)
