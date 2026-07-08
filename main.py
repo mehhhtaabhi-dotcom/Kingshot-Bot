@@ -74,7 +74,6 @@ utc_midnight = dt_time(hour=0, minute=0, tzinfo=timezone.utc)
 
 @tasks.loop(time=utc_warning)
 async def daily_reset_warning():
-    # Blasts the warning to BOTH channels 10 minutes early
     target_channels = [CHANNELS["alliance"], CHANNELS["alliance_events"]]
     for channel_id in target_channels:
         channel = bot.get_channel(channel_id)
@@ -83,7 +82,6 @@ async def daily_reset_warning():
 
 @tasks.loop(time=utc_midnight)
 async def daily_reset_alert():
-    # Blasts the final reset to BOTH channels
     target_channels = [CHANNELS["alliance"], CHANNELS["alliance_events"]]
     for channel_id in target_channels:
         channel = bot.get_channel(channel_id)
@@ -124,7 +122,7 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
 # --- 5. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling and Automated Reset Alarms active.")
+    print(f"👑 Zeus is online, anchored on Render, with upgraded Personality and Broadcast capabilities.")
     if not daily_reset_warning.is_running():
         daily_reset_warning.start()
     if not daily_reset_alert.is_running():
@@ -155,25 +153,25 @@ async def on_message(message):
                     "• **Upgrades:** Ask about *star levels, tiers,* or *upgrade costs*.\n"
                     "• **Acquisition:** Ask about *how to get, unlock,* or *recruit* heroes.\n"
                     "• **Lore:** Ask about a hero's *lore, backstory,* or *history*.\n\n"
-                    "*(Commander Kratos can also DM me event schedules via natural language!)*\n\n"
+                    "*(Commander Kratos can also DM me commands via natural language!)*\n\n"
                     "*Example:* `What are the upgrade requirements for Ava?`"
                 )
                 await message.channel.send(menu)
                 return
 
             async with message.channel.typing():
-                # 2. NLP Scheduler Interceptor (Only active in Private DMs)
-                if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event", "timer", "remind", "set"]):
+                # 2. NLP Command Interceptor (Only active in Private DMs for Scheduling & Broadcasting)
+                if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event", "timer", "remind", "set", "broadcast", "announce", "send"]):
                     try:
                         current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                         nlp_sys_instruct = (
-                            f"You are Zeus's internal event-parser. The current time is {current_utc}. "
-                            "The user is trying to schedule an event. Read their text and extract: "
-                            "1. Event Name. 2. Total hours from now until the event (as a float). 3. Target channel key. "
+                            f"You are Zeus's internal command parser. The current time is {current_utc}. "
+                            "Read the user's text and detect if they want to SCHEDULE a timer OR BROADCAST a live message. "
+                            "1. IF SCHEDULING: Extract Event Name, Hours (as float), and Target Channel Key. Output STRICTLY: SCHEDULE|Event Name|Hours|ChannelKey \n"
+                            "2. IF BROADCASTING: Extract the exact message they want to broadcast, and the Target Channel Keys (comma separated). Output STRICTLY: BROADCAST|Message to send|ChannelKey1,ChannelKey2 \n"
                             "Available channel keys: 'event_alert', 'alliance_events', 'alliance', 'guide', 'gift_codes'. "
-                            "If they do not specify a channel, default to 'event_alert'. "
-                            "Output STRICTLY in this pipe-separated format: SCHEDULE|Event Name|Hours|ChannelKey. "
-                            "If the text is a general question and NOT a scheduling request, output NO_SCHEDULE."
+                            "If they do not specify a channel, default to 'alliance'. "
+                            "If the text is just a normal question and NOT a command, output NO_COMMAND."
                         )
                         
                         config = types.GenerateContentConfig(system_instruction=nlp_sys_instruct)
@@ -184,32 +182,52 @@ async def on_message(message):
                         )
                         
                         bot_reply = parse_response.text.strip()
+                        
+                        # Handle Schedule
                         if bot_reply.startswith("SCHEDULE|"):
                             parts = bot_reply.split("|")
                             event_name = parts[1]
                             hours = float(parts[2])
                             channel_key = parts[3].strip()
-                            
                             target_id = CHANNELS.get(channel_key, CHANNELS["event_alert"])
-                            
                             asyncio.create_task(run_event_timer(target_id, hours, event_name, message.channel))
                             return 
+                            
+                        # Handle Broadcast
+                        elif bot_reply.startswith("BROADCAST|"):
+                            parts = bot_reply.split("|")
+                            message_to_send = parts[1]
+                            channel_keys = parts[2].split(",")
+                            
+                            success_channels = []
+                            for key in channel_keys:
+                                key = key.strip()
+                                target_id = CHANNELS.get(key, CHANNELS["alliance"])
+                                target_channel = bot.get_channel(target_id)
+                                if target_channel:
+                                    await target_channel.send(f"📢 **ALLIANCE BROADCAST:**\n{message_to_send}")
+                                    success_channels.append(key)
+                                    
+                            await message.channel.send(f"✅ Message successfully broadcasted to: {', '.join(success_channels)}")
+                            return
+
                     except Exception as e:
                         print(f"NLP Parser Error: {e}")
 
-                # 3. Standard RAG & Search Processing with Live Temporal Context
+                # 3. Conversational RAG & Search Processing (With Upgraded Personality)
                 try:
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
                     
-                    # INJECTING THE LIVE CLOCK INTO ZEUS'S BRAIN
                     current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                     sys_instruct = (
-                        f"You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
-                        f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC every day. "
-                        "If the user asks about the daily reset, use the current time to calculate and tell them exactly how many hours and minutes remain. "
-                        "IMPORTANT: Answer the query accurately based on the provided document context. "
-                        "If the user asks a general real-world question outside of Kingshot game data, use the Google Search tool to find the answer."
+                        f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
+                        f"Speak naturally and politely like a helpful human alliance member, while keeping a loyal Spartan flavor. "
+                        f"If a user says hello, greet them warmly. If they say they don't need help, reply naturally (e.g., 'Understood, let me know if you need anything!'). "
+                        f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC. "
+                        f"If asked, use the current time to calculate the exact hours and minutes remaining until the reset. "
+                        f"IMPORTANT: Answer game queries accurately based on the provided document context. "
+                        f"If the user asks a real-world question outside of game data, use the Google Search tool."
                     )
                     
                     config = types.GenerateContentConfig(
