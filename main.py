@@ -179,7 +179,7 @@ async def on_message(message):
                         
                         config = types.GenerateContentConfig(system_instruction=nlp_sys_instruct)
                         parse_response = await client.aio.models.generate_content(
-                            model='gemini-2.5-flash-lite',
+                            model='gemini-3.1-flash-lite',
                             contents=user_text,
                             config=config
                         )
@@ -247,7 +247,7 @@ async def on_message(message):
                     )
                     
                     response = await client.aio.models.generate_content(
-                        model='gemini-2.5-flash-lite',
+                        model='gemini-3.1-flash-lite',
                         contents=[uploaded_file, user_text],
                         config=config
                     )
