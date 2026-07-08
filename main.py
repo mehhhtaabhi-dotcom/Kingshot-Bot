@@ -41,7 +41,6 @@ def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
 # --- 3. THE DYNAMIC CLOUD ROUTER & MEMORY CACHE ---
-# This dictionary acts as Zeus's short-term memory to protect API limits
 response_cache = {}
 
 def get_cloud_file_id(user_message):
@@ -54,22 +53,23 @@ def get_cloud_file_id(user_message):
     keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
     keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
     
+    # NEW SECURE FILE ID MAPPINGS
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
-        return "files/dk5ougy7c5qo" 
+        return "files/27m5vcp6y8xa" # alliance_rule.txt
     elif any(w in msg for w in keywords_tactics):
-        return "files/dk5ougy7c5qo" 
+        return "files/27m5vcp6y8xa" # Tactics routed to alliance_rule.txt for now
     elif any(w in msg for w in keywords_stats):
-        return "files/y979bgfrjw1d" 
+        return "files/81wc8jpxak6e" # Base stats Structure.txt
     elif any(w in msg for w in keywords_skills):
-        return "files/qu4n6174euyr" 
+        return "files/9mzt5an2h4h4" # Skill sets.txt
     elif any(w in msg for w in keywords_upgrade):
-        return "files/elwoka9a10b9" 
+        return "files/8tdzou98ny9g" # Upgrade requirements for heroes.txt
     elif any(w in msg for w in keywords_acquire):
-        return "files/aat3flf0swyz" 
+        return "files/hf5dwoj13qlb" # Acquisition Methods.txt
     elif any(w in msg for w in keywords_lore):
-        return "files/m3g8qp0vn5p3" 
+        return "files/fjqiocdss54u" # Lore & Backstory.txt
     else:
-        return "files/v7n4tt3csbn3" 
+        return "files/48pz7r4sj0qr" # Kingshot_heroes.txt (Default)
 
 # --- 4. THE TIMEKEEPER: AUTOMATED DAILY ALARMS ---
 utc_warning = dt_time(hour=23, minute=50, tzinfo=timezone.utc)
@@ -224,12 +224,10 @@ async def on_message(message):
                     time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock"]
                     is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
                     
-                    # If the question was asked before AND it is not about time, use the cache to save API limits!
                     if not is_time_sensitive and cache_key in response_cache:
                         await message.channel.send(response_cache[cache_key])
                         return
 
-                    # Otherwise, query Google Cloud File
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
                     
@@ -257,7 +255,6 @@ async def on_message(message):
                     )
                     
                     if response.text:
-                        # Save the new answer to the Memory Cache
                         if not is_time_sensitive:
                             response_cache[cache_key] = response.text
                         await message.channel.send(response.text)
