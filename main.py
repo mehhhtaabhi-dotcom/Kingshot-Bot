@@ -55,21 +55,21 @@ def get_cloud_file_id(user_message):
     
     # NEW SECURE FILE ID MAPPINGS
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
-        return "files/27m5vcp6y8xa" # alliance_rule.txt
+        return "files/m2vqx2bq57bu" # alliance_rule.txt
     elif any(w in msg for w in keywords_tactics):
-        return "files/27m5vcp6y8xa" # Tactics routed to alliance_rule.txt for now
+        return "files/m2vqx2bq57bu" # Tactics routed to alliance_rule.txt for now
     elif any(w in msg for w in keywords_stats):
-        return "files/81wc8jpxak6e" # Base stats Structure.txt
+        return "files/0o9zm65f7mjg" # Base stats Structure.txt
     elif any(w in msg for w in keywords_skills):
-        return "files/9mzt5an2h4h4" # Skill sets.txt
+        return "files/fz52aprh8rso" # Skill sets.txt
     elif any(w in msg for w in keywords_upgrade):
-        return "files/8tdzou98ny9g" # Upgrade requirements for heroes.txt
+        return "files/gvsdjnjdb96b" # Upgrade requirements for heroes.txt
     elif any(w in msg for w in keywords_acquire):
-        return "files/hf5dwoj13qlb" # Acquisition Methods.txt
+        return "files/39vqs1sf1tch" # Acquisition Methods.txt
     elif any(w in msg for w in keywords_lore):
-        return "files/fjqiocdss54u" # Lore & Backstory.txt
+        return "files/hc1247j4ayzs" # Lore & Backstory.txt
     else:
-        return "files/48pz7r4sj0qr" # Kingshot_heroes.txt (Default)
+        return "files/8d6uq3g9sbbc" # Kingshot_heroes.txt (Default)
 
 # --- 4. THE TIMEKEEPER: AUTOMATED DAILY ALARMS ---
 utc_warning = dt_time(hour=23, minute=50, tzinfo=timezone.utc)
@@ -243,9 +243,28 @@ async def on_message(message):
                         f"If the user asks a real-world question outside of game data, use the Google Search tool."
                     )
                     
+                    # SAFETY OVERRIDE ENABLED
                     config = types.GenerateContentConfig(
                         system_instruction=sys_instruct,
-                        tools=[{"google_search": {}}]
+                        tools=[{"google_search": {}}],
+                        safety_settings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                        ]
                     )
                     
                     response = await client.aio.models.generate_content(
@@ -260,8 +279,14 @@ async def on_message(message):
                         await message.channel.send(response.text)
                     else:
                         await message.channel.send("⚠️ Zeus returned an empty response.")
+                
+                # UPDATED RATE LIMIT & EXCEPTION HANDLER
                 except Exception as e:
-                    await message.channel.send(f"❌ Gemini API Error: {str(e)}")
+                    error_msg = str(e)
+                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                        await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again, Spartan.")
+                    else:
+                        await message.channel.send(f"❌ Systems Error: {error_msg}")
 
 # --- 6. IGNITION ---
 if __name__ == "__main__":
