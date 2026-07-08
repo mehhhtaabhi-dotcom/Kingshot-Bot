@@ -80,7 +80,6 @@ async def daily_reset_alert():
             "Kingshot servers have refreshed (00:00 UTC). Daily Watchtower missions and events are now active. Get to work, Spartans!"
         )
 
-# The Background Timer Task
 async def run_event_timer(channel_id, hours, event_name, dm_channel):
     target_channel = bot.get_channel(channel_id)
     if not target_channel:
@@ -91,10 +90,8 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
     warning_seconds = seconds_total - 600  
     target_time = int(time.time()) + seconds_total
 
-    # Send confirmation back to Kratos in DM
     await dm_channel.send(f"✅ AI Parsed Successfully! Event '{event_name}' locked in for <t:{target_time}:R>.")
 
-    # Post initial calendar alert to the specific server channel
     await target_channel.send(
         f"@everyone 📅 **UPCOMING EVENT: {event_name.upper()}**\n"
         f"🌍 **Local Start Time:** <t:{target_time}:F>\n"
@@ -102,7 +99,6 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
         f"*I will sound the 10-minute preparation warning.*"
     )
 
-    # Wait silently in the background
     if warning_seconds > 0:
         await asyncio.sleep(warning_seconds)
         await target_channel.send(f"@everyone ⚠️ **10-MINUTE WARNING!** Prepare for {event_name}! (<t:{target_time}:R>)")
@@ -110,14 +106,12 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
     else:
         await asyncio.sleep(seconds_total)
 
-    # Final Alarm
     await target_channel.send(f"@everyone 🔥 **IT IS TIME! {event_name.upper()} HAS BEGUN!** Charge!")
-
 
 # --- 5. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling active.")
+    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling and Live Clocks active.")
     if not daily_reset_alert.is_running():
         daily_reset_alert.start()
 
@@ -174,7 +168,6 @@ async def on_message(message):
                             config=config
                         )
                         
-                        # Check if Gemini detected a scheduling request
                         bot_reply = parse_response.text.strip()
                         if bot_reply.startswith("SCHEDULE|"):
                             parts = bot_reply.split("|")
@@ -184,20 +177,22 @@ async def on_message(message):
                             
                             target_id = CHANNELS.get(channel_key, CHANNELS["event_alert"])
                             
-                            # Fire the background timer and stop processing the message
                             asyncio.create_task(run_event_timer(target_id, hours, event_name, message.channel))
                             return 
                     except Exception as e:
                         print(f"NLP Parser Error: {e}")
-                        # If parsing fails, silently fall back to the normal chat response below
 
-                # 3. Standard RAG & Search Processing
+                # 3. Standard RAG & Search Processing with Live Temporal Context
                 try:
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
                     
+                    # INJECTING THE LIVE CLOCK INTO ZEUS'S BRAIN
+                    current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                     sys_instruct = (
-                        "You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
+                        f"You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
+                        f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC every day. "
+                        "If the user asks about the daily reset, use the current time to calculate and tell them exactly how many hours and minutes remain. "
                         "IMPORTANT: Answer the query accurately based on the provided document context. "
                         "If the user asks a general real-world question outside of Kingshot game data, use the Google Search tool to find the answer."
                     )
