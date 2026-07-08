@@ -1,21 +1,30 @@
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from google import genai
 from google.genai import types
 import asyncio
 import time
+from datetime import datetime, time as dt_time, timezone
 from flask import Flask
 from threading import Thread
 
-# --- 1. CONFIGURATION ---
+# --- 1. SECURE CONFIGURATION & CHANNEL MAPPING ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-ALLIANCE_CHANNEL_ID = 123456789012345678  # Paste your 18-digit channel ID here
 
 if not TOKEN or not GEMINI_API_KEY:
     print("❌ CRITICAL ERROR: Missing DISCORD_TOKEN or GEMINI_API_KEY in Render Environment Variables!")
     exit(1)
+
+# Zeus's Internal Channel Directory
+CHANNELS = {
+    "guide": 1500550614889791730,
+    "event_alert": 1522335245196726412,
+    "alliance": 1500543041625129122,
+    "alliance_events": 1500543041625129123,
+    "gift_codes": 1500550108431781918
+}
 
 client = genai.Client()
 intents = discord.Intents.all()
@@ -43,84 +52,88 @@ def get_cloud_file_id(user_message):
     keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
     
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
-        return "files/dk5ougy7c5qo" # alliance_rule.txt
+        return "files/dk5ougy7c5qo" 
     elif any(w in msg for w in keywords_tactics):
-        return "files/dk5ougy7c5qo" # Temporarily routes to alliance_rules until Bear Hunt data is uploaded
+        return "files/dk5ougy7c5qo" 
     elif any(w in msg for w in keywords_stats):
-        return "files/y979bgfrjw1d" # Base stats Structure.txt
+        return "files/y979bgfrjw1d" 
     elif any(w in msg for w in keywords_skills):
-        return "files/qu4n6174euyr" # Skill sets.txt
+        return "files/qu4n6174euyr" 
     elif any(w in msg for w in keywords_upgrade):
-        return "files/elwoka9a10b9" # Upgrade requirements.txt
+        return "files/elwoka9a10b9" 
     elif any(w in msg for w in keywords_acquire):
-        return "files/aat3flf0swyz" # Acquisition Methods.txt
+        return "files/aat3flf0swyz" 
     elif any(w in msg for w in keywords_lore):
-        return "files/m3g8qp0vn5p3" # Lore & Backstory.txt
+        return "files/m3g8qp0vn5p3" 
     else:
-        return "files/v7n4tt3csbn3" # Kingshot_heroes.txt (Default)
+        return "files/v7n4tt3csbn3" 
 
-# --- 4. DISCORD BOT ACTIONS ---
-@bot.event
-async def on_ready():
-    print(f"👑 Zeus is online, routed to Google Cloud, and anchored on Render!")
+# --- 4. THE TIMEKEEPER: ASYNC COUNTDOWNS ---
+utc_midnight = dt_time(hour=0, minute=0, tzinfo=timezone.utc)
 
-@bot.event
-async def on_member_join(member):
-    channel = bot.get_channel(ALLIANCE_CHANNEL_ID)
+@tasks.loop(time=utc_midnight)
+async def daily_reset_alert():
+    channel = bot.get_channel(CHANNELS["alliance"])  # Defaults to main alliance channel
     if channel:
-        welcome_message = (
-            f"🛡️ **Welcome to KNG Spartan Rage, {member.mention}!**\n"
-            f"Prepare for battle. I am Zeus, the alliance AI. If you need to check our rules or hero profiles, just ping `@Zeus`!"
+        await channel.send(
+            "🌅 **GLOBAL DAY RESET** 🌅\n"
+            "Kingshot servers have refreshed (00:00 UTC). Daily Watchtower missions and events are now active. Get to work, Spartans!"
         )
-        await channel.send(welcome_message)
 
-@bot.command()
-async def remind(ctx, hours: float, *, event_name: str):
-    channel = bot.get_channel(ALLIANCE_CHANNEL_ID)
-    if not channel:
-        await ctx.send("❌ Error: Alliance Channel ID is missing or incorrect.")
+# The Background Timer Task
+async def run_event_timer(channel_id, hours, event_name, dm_channel):
+    target_channel = bot.get_channel(channel_id)
+    if not target_channel:
+        await dm_channel.send(f"❌ Error: Could not locate the target channel to post the alert.")
         return
 
     seconds_total = int(hours * 3600)
-    warning_seconds = seconds_total - 300
+    warning_seconds = seconds_total - 600  
     target_time = int(time.time()) + seconds_total
 
-    await channel.send(
-        f"@everyone ⚔️ **ALLIANCE ALERT: {event_name.upper()}**\n"
-        f"Event begins in **<t:{target_time}:R>**! (<t:{target_time}:t>)\n"
-        f"*I will sound the 5-minute warning.*"
-    )
-    
-    # Check if the command was sent in a DM or a server channel
-    if isinstance(ctx.channel, discord.DMChannel):
-        await ctx.send(f"✅ Timer set for {hours} hours. I will notify the alliance channel.")
-    else:
-        await ctx.send(f"✅ Timer set for {hours} hours.")
+    # Send confirmation back to Kratos in DM
+    await dm_channel.send(f"✅ AI Parsed Successfully! Event '{event_name}' locked in for <t:{target_time}:R>.")
 
+    # Post initial calendar alert to the specific server channel
+    await target_channel.send(
+        f"@everyone 📅 **UPCOMING EVENT: {event_name.upper()}**\n"
+        f"🌍 **Local Start Time:** <t:{target_time}:F>\n"
+        f"⏳ **Countdown:** <t:{target_time}:R>\n"
+        f"*I will sound the 10-minute preparation warning.*"
+    )
+
+    # Wait silently in the background
     if warning_seconds > 0:
         await asyncio.sleep(warning_seconds)
-        await channel.send(f"@everyone ⚠️ **5-MINUTE WARNING!** Prepare for {event_name}! (<t:{target_time}:R>)")
-        await asyncio.sleep(300)
+        await target_channel.send(f"@everyone ⚠️ **10-MINUTE WARNING!** Prepare for {event_name}! (<t:{target_time}:R>)")
+        await asyncio.sleep(600)
     else:
         await asyncio.sleep(seconds_total)
 
-    await channel.send(f"@everyone 🔥 **IT IS TIME! {event_name.upper()} HAS BEGUN!** Charge!")
+    # Final Alarm
+    await target_channel.send(f"@everyone 🔥 **IT IS TIME! {event_name.upper()} HAS BEGUN!** Charge!")
+
+
+# --- 5. DISCORD BOT ACTIONS ---
+@bot.event
+async def on_ready():
+    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling active.")
+    if not daily_reset_alert.is_running():
+        daily_reset_alert.start()
 
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Check if it is a Private DM OR if Zeus is mentioned in a server
     is_private_dm = isinstance(message.channel, discord.DMChannel)
     is_mentioned = bot.user in message.mentions
 
     if is_private_dm or is_mentioned:
-        # Clean the text if he was mentioned
         user_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
-        
+            
         if user_text:
-            # The Directory Interceptor
+            # 1. Directory Interceptor
             meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features"]
             if any(w in user_text.lower() for w in meta_keywords):
                 menu = (
@@ -133,22 +146,66 @@ async def on_message(message):
                     "• **Upgrades:** Ask about *star levels, tiers,* or *upgrade costs*.\n"
                     "• **Acquisition:** Ask about *how to get, unlock,* or *recruit* heroes.\n"
                     "• **Lore:** Ask about a hero's *lore, backstory,* or *history*.\n\n"
+                    "*(Commander Kratos can also DM me event schedules via natural language!)*\n\n"
                     "*Example:* `What are the upgrade requirements for Ava?`"
                 )
                 await message.channel.send(menu)
                 return
 
             async with message.channel.typing():
+                # 2. NLP Scheduler Interceptor (Only active in Private DMs)
+                if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event", "timer", "remind", "set"]):
+                    try:
+                        current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+                        nlp_sys_instruct = (
+                            f"You are Zeus's internal event-parser. The current time is {current_utc}. "
+                            "The user is trying to schedule an event. Read their text and extract: "
+                            "1. Event Name. 2. Total hours from now until the event (as a float). 3. Target channel key. "
+                            "Available channel keys: 'event_alert', 'alliance_events', 'alliance', 'guide', 'gift_codes'. "
+                            "If they do not specify a channel, default to 'event_alert'. "
+                            "Output STRICTLY in this pipe-separated format: SCHEDULE|Event Name|Hours|ChannelKey. "
+                            "If the text is a general question and NOT a scheduling request, output NO_SCHEDULE."
+                        )
+                        
+                        config = types.GenerateContentConfig(system_instruction=nlp_sys_instruct)
+                        parse_response = await client.aio.models.generate_content(
+                            model='gemini-2.5-flash-lite',
+                            contents=user_text,
+                            config=config
+                        )
+                        
+                        # Check if Gemini detected a scheduling request
+                        bot_reply = parse_response.text.strip()
+                        if bot_reply.startswith("SCHEDULE|"):
+                            parts = bot_reply.split("|")
+                            event_name = parts[1]
+                            hours = float(parts[2])
+                            channel_key = parts[3].strip()
+                            
+                            target_id = CHANNELS.get(channel_key, CHANNELS["event_alert"])
+                            
+                            # Fire the background timer and stop processing the message
+                            asyncio.create_task(run_event_timer(target_id, hours, event_name, message.channel))
+                            return 
+                    except Exception as e:
+                        print(f"NLP Parser Error: {e}")
+                        # If parsing fails, silently fall back to the normal chat response below
+
+                # 3. Standard RAG & Search Processing
                 try:
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
                     
                     sys_instruct = (
                         "You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
-                        "IMPORTANT: Answer the query accurately based ONLY on the provided document context. "
-                        "Do not invent stats, rules, or tactics."
+                        "IMPORTANT: Answer the query accurately based on the provided document context. "
+                        "If the user asks a general real-world question outside of Kingshot game data, use the Google Search tool to find the answer."
                     )
-                    config = types.GenerateContentConfig(system_instruction=sys_instruct)
+                    
+                    config = types.GenerateContentConfig(
+                        system_instruction=sys_instruct,
+                        tools=[{"google_search": {}}]
+                    )
                     
                     response = await client.aio.models.generate_content(
                         model='gemini-2.5-flash-lite',
@@ -162,10 +219,8 @@ async def on_message(message):
                         await message.channel.send("⚠️ Zeus returned an empty response.")
                 except Exception as e:
                     await message.channel.send(f"❌ Gemini API Error: {str(e)}")
-    
-    await bot.process_commands(message)
 
-# --- 5. IGNITION ---
+# --- 6. IGNITION ---
 if __name__ == "__main__":
     flask_thread = Thread(target=run_flask)
     flask_thread.start()
