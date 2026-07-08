@@ -68,17 +68,30 @@ def get_cloud_file_id(user_message):
     else:
         return "files/v7n4tt3csbn3" 
 
-# --- 4. THE TIMEKEEPER: ASYNC COUNTDOWNS ---
+# --- 4. THE TIMEKEEPER: AUTOMATED DAILY ALARMS ---
+utc_warning = dt_time(hour=23, minute=50, tzinfo=timezone.utc)
 utc_midnight = dt_time(hour=0, minute=0, tzinfo=timezone.utc)
+
+@tasks.loop(time=utc_warning)
+async def daily_reset_warning():
+    # Blasts the warning to BOTH channels 10 minutes early
+    target_channels = [CHANNELS["alliance"], CHANNELS["alliance_events"]]
+    for channel_id in target_channels:
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await channel.send("⚠️ **10-MINUTE WARNING!** The Global Day Reset is approaching (00:00 UTC). Wrap up your current missions!")
 
 @tasks.loop(time=utc_midnight)
 async def daily_reset_alert():
-    channel = bot.get_channel(CHANNELS["alliance"])  # Defaults to main alliance channel
-    if channel:
-        await channel.send(
-            "🌅 **GLOBAL DAY RESET** 🌅\n"
-            "Kingshot servers have refreshed (00:00 UTC). Daily Watchtower missions and events are now active. Get to work, Spartans!"
-        )
+    # Blasts the final reset to BOTH channels
+    target_channels = [CHANNELS["alliance"], CHANNELS["alliance_events"]]
+    for channel_id in target_channels:
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await channel.send(
+                "🌅 **GLOBAL DAY RESET** 🌅\n"
+                "Kingshot servers have refreshed (00:00 UTC). Daily Watchtower missions and events are now active. Get to work, Spartans!"
+            )
 
 async def run_event_timer(channel_id, hours, event_name, dm_channel):
     target_channel = bot.get_channel(channel_id)
@@ -111,7 +124,9 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
 # --- 5. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling and Live Clocks active.")
+    print(f"👑 Zeus is online, anchored on Render, with NLP Scheduling and Automated Reset Alarms active.")
+    if not daily_reset_warning.is_running():
+        daily_reset_warning.start()
     if not daily_reset_alert.is_running():
         daily_reset_alert.start()
 
