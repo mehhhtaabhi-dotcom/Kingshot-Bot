@@ -125,7 +125,9 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
 # --- 5. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, anchored on Render, with API Caching active.")
+    print(f"👑 Zeus is online, anchored on Render.")
+    print(f"⚡ Core: Gemini 3.1 Flash-Lite (1M TPM / 15 RPM limit active).")
+    print(f"🛡️ Memory Cache Defense Systems: ONLINE.")
     if not daily_reset_warning.is_running():
         daily_reset_warning.start()
     if not daily_reset_alert.is_running():
@@ -144,11 +146,12 @@ async def on_message(message):
             
         if user_text:
             # 1. Directory Interceptor
-            meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features"]
+            meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features", "what model"]
             if any(w in user_text.lower() for w in meta_keywords):
                 menu = (
                     "🛡️ **ZEUS TACTICAL DATABANKS** 🛡️\n"
-                    "I am the KNG Spartan Rage AI. To access my cloud databanks, ask me about:\n\n"
+                    "I am the KNG Spartan Rage AI, currently powered by the upgraded **Gemini 3.1 Flash-Lite** core.\n"
+                    "To access my cloud databanks, ask me about:\n\n"
                     "• **Alliance Directives:** Ask about *rules, missions,* or *Kratos*.\n"
                     "• **Tactics:** Ask about *bear hunt, formations,* or *strategy*.\n"
                     "• **Hero Stats:** Ask about *health, attack, defense,* or *expedition*.\n"
@@ -168,7 +171,7 @@ async def on_message(message):
                     try:
                         current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                         nlp_sys_instruct = (
-                            f"You are Zeus's internal command parser. The current time is {current_utc}. "
+                            f"You are Zeus's internal command parser running on Gemini 3.1 Flash-Lite. The current time is {current_utc}. "
                             "Read the user's text and detect if they want to SCHEDULE a timer OR BROADCAST a live message. "
                             "1. IF SCHEDULING: Extract Event Name, Hours (as float), and Target Channel Key. Output STRICTLY: SCHEDULE|Event Name|Hours|ChannelKey \n"
                             "2. IF BROADCASTING: Extract the exact message they want to broadcast, and the Target Channel Keys (comma separated). Output STRICTLY: BROADCAST|Message to send|ChannelKey1,ChannelKey2 \n"
@@ -234,6 +237,7 @@ async def on_message(message):
                     sys_instruct = (
                         f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
                         f"Speak naturally and politely like a helpful human alliance member, while keeping a loyal Spartan flavor. "
+                        f"If asked what model you are running on, confirm you are powered by the upgraded Gemini 3.1 Flash-Lite core. "
                         f"If a user says hello, greet them warmly. If they say they don't need help, reply naturally (e.g., 'Understood, let me know if you need anything!'). "
                         f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC. "
                         f"If asked, use the current time to calculate the exact hours and minutes remaining until the reset. "
