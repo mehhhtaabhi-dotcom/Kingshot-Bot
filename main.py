@@ -8,20 +8,16 @@ import time
 from flask import Flask
 from threading import Thread
 
-# --- 1. CONFIGURATION (SECURED VIA RENDER ENVIRONMENT VARIABLES) ---
+# --- 1. CONFIGURATION ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ALLIANCE_CHANNEL_ID = 123456789012345678  # Paste your 18-digit channel ID here
 
-ALLIANCE_CHANNEL_ID = 123456789012345678  # 👈 Paste your 18-digit channel ID here
-
-# Failsafe: Stops the bot from crashing silently if keys are missing
 if not TOKEN or not GEMINI_API_KEY:
     print("❌ CRITICAL ERROR: Missing DISCORD_TOKEN or GEMINI_API_KEY in Render Environment Variables!")
     exit(1)
 
-# Initialize the GenAI client (It automatically reads the GEMINI_API_KEY environment variable!)
 client = genai.Client()
-
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -44,9 +40,12 @@ def get_cloud_file_id(user_message):
     keywords_upgrade = ["upgrade", "star", "tier", "requirement", "table", "level up", "cost"]
     keywords_acquire = ["get", "acquire", "unlock", "find", "roulette", "governor", "recruitment", "pack", "shop", "shard"]
     keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
+    keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
     
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
         return "files/dk5ougy7c5qo" # alliance_rule.txt
+    elif any(w in msg for w in keywords_tactics):
+        return "files/dk5ougy7c5qo" # Temporarily routes to alliance_rules until Bear Hunt data is uploaded
     elif any(w in msg for w in keywords_stats):
         return "files/y979bgfrjw1d" # Base stats Structure.txt
     elif any(w in msg for w in keywords_skills):
@@ -63,7 +62,7 @@ def get_cloud_file_id(user_message):
 # --- 4. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, routed to Google Cloud, and safely anchored on Render!")
+    print(f"👑 Zeus is online, routed to Google Cloud, and anchored on Render!")
 
 @bot.event
 async def on_member_join(member):
@@ -92,7 +91,11 @@ async def remind(ctx, hours: float, *, event_name: str):
         f"*I will sound the 5-minute warning.*"
     )
     
-    await ctx.send(f"✅ Timer set for {hours} hours.")
+    # Check if the command was sent in a DM or a server channel
+    if isinstance(ctx.channel, discord.DMChannel):
+        await ctx.send(f"✅ Timer set for {hours} hours. I will notify the alliance channel.")
+    else:
+        await ctx.send(f"✅ Timer set for {hours} hours.")
 
     if warning_seconds > 0:
         await asyncio.sleep(warning_seconds)
@@ -108,10 +111,33 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    if bot.user in message.mentions:
+    # Check if it is a Private DM OR if Zeus is mentioned in a server
+    is_private_dm = isinstance(message.channel, discord.DMChannel)
+    is_mentioned = bot.user in message.mentions
+
+    if is_private_dm or is_mentioned:
+        # Clean the text if he was mentioned
         user_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
         
         if user_text:
+            # The Directory Interceptor
+            meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features"]
+            if any(w in user_text.lower() for w in meta_keywords):
+                menu = (
+                    "🛡️ **ZEUS TACTICAL DATABANKS** 🛡️\n"
+                    "I am the KNG Spartan Rage AI. To access my cloud databanks, ask me about:\n\n"
+                    "• **Alliance Directives:** Ask about *rules, missions,* or *Kratos*.\n"
+                    "• **Tactics:** Ask about *bear hunt, formations,* or *strategy*.\n"
+                    "• **Hero Stats:** Ask about *health, attack, defense,* or *expedition*.\n"
+                    "• **Hero Skills:** Ask about *skills, abilities, stuns,* or *heals*.\n"
+                    "• **Upgrades:** Ask about *star levels, tiers,* or *upgrade costs*.\n"
+                    "• **Acquisition:** Ask about *how to get, unlock,* or *recruit* heroes.\n"
+                    "• **Lore:** Ask about a hero's *lore, backstory,* or *history*.\n\n"
+                    "*Example:* `What are the upgrade requirements for Ava?`"
+                )
+                await message.channel.send(menu)
+                return
+
             async with message.channel.typing():
                 try:
                     target_file_id = get_cloud_file_id(user_text)
@@ -120,7 +146,7 @@ async def on_message(message):
                     sys_instruct = (
                         "You are Zeus, the specialized tactical assistant for KNG Spartan Rage. "
                         "IMPORTANT: Answer the query accurately based ONLY on the provided document context. "
-                        "Do not invent stats or rules."
+                        "Do not invent stats, rules, or tactics."
                     )
                     config = types.GenerateContentConfig(system_instruction=sys_instruct)
                     
@@ -141,9 +167,6 @@ async def on_message(message):
 
 # --- 5. IGNITION ---
 if __name__ == "__main__":
-    # Start the Flask web server on a separate thread
     flask_thread = Thread(target=run_flask)
     flask_thread.start()
-    
-    # Start the Discord bot
     bot.run(TOKEN)
