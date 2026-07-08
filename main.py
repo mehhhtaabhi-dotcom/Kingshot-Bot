@@ -40,7 +40,10 @@ def home():
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
-# --- 3. THE DYNAMIC CLOUD ROUTER ---
+# --- 3. THE DYNAMIC CLOUD ROUTER & MEMORY CACHE ---
+# This dictionary acts as Zeus's short-term memory to protect API limits
+response_cache = {}
+
 def get_cloud_file_id(user_message):
     msg = user_message.lower()
     
@@ -122,7 +125,7 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
 # --- 5. DISCORD BOT ACTIONS ---
 @bot.event
 async def on_ready():
-    print(f"👑 Zeus is online, anchored on Render, with upgraded Personality and Broadcast capabilities.")
+    print(f"👑 Zeus is online, anchored on Render, with API Caching active.")
     if not daily_reset_warning.is_running():
         daily_reset_warning.start()
     if not daily_reset_alert.is_running():
@@ -160,7 +163,7 @@ async def on_message(message):
                 return
 
             async with message.channel.typing():
-                # 2. NLP Command Interceptor (Only active in Private DMs for Scheduling & Broadcasting)
+                # 2. NLP Command Interceptor
                 if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event", "timer", "remind", "set", "broadcast", "announce", "send"]):
                     try:
                         current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -183,7 +186,6 @@ async def on_message(message):
                         
                         bot_reply = parse_response.text.strip()
                         
-                        # Handle Schedule
                         if bot_reply.startswith("SCHEDULE|"):
                             parts = bot_reply.split("|")
                             event_name = parts[1]
@@ -193,7 +195,6 @@ async def on_message(message):
                             asyncio.create_task(run_event_timer(target_id, hours, event_name, message.channel))
                             return 
                             
-                        # Handle Broadcast
                         elif bot_reply.startswith("BROADCAST|"):
                             parts = bot_reply.split("|")
                             message_to_send = parts[1]
@@ -214,8 +215,18 @@ async def on_message(message):
                     except Exception as e:
                         print(f"NLP Parser Error: {e}")
 
-                # 3. Conversational RAG & Search Processing (With Upgraded Personality)
+                # 3. Conversational RAG & Search Processing (WITH MEMORY CACHE)
                 try:
+                    cache_key = user_text.lower()
+                    time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock"]
+                    is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
+                    
+                    # If the question was asked before AND it is not about time, use the cache to save API limits!
+                    if not is_time_sensitive and cache_key in response_cache:
+                        await message.channel.send(response_cache[cache_key])
+                        return
+
+                    # Otherwise, query Google Cloud File
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
                     
@@ -242,6 +253,9 @@ async def on_message(message):
                     )
                     
                     if response.text:
+                        # Save the new answer to the Memory Cache
+                        if not is_time_sensitive:
+                            response_cache[cache_key] = response.text
                         await message.channel.send(response.text)
                     else:
                         await message.channel.send("⚠️ Zeus returned an empty response.")
