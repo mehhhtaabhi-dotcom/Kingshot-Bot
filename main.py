@@ -82,12 +82,11 @@ def get_upcoming_events():
 
         now = datetime.now(timezone.utc)
         
-        # LOOKBACK WINDOW: Checks 7 days prior to capture multi-day events that are currently live
-        start_bound = now - timedelta(days=7)
-        end_bound = now + timedelta(days=14)
+        # THE CORE FIX: Boundaries are standardized to clean date objects to safely handle mixed all-day streams
+        start_date = now.date() - timedelta(days=2)  
+        end_date = now.date() + timedelta(days=14)
 
-        # FIXED: Pass strict timezone-aware datetimes to correctly capture timed iCal items
-        events = recurring_ical_events.of(cal).between(start_bound, end_bound)
+        events = recurring_ical_events.of(cal).between(start_date, end_date)
 
         output = []
         for component in events:
@@ -95,20 +94,25 @@ def get_upcoming_events():
             start = component.get('dtstart').dt
             end = component.get('dtend').dt if component.get('dtend') else None
 
-            # Unify formats to UTC datetime objects for accurate expiration evaluations
-            start_dt = start if isinstance(start, datetime) else datetime.combine(start, datetime.min.time()).replace(tzinfo=timezone.utc)
-            if start_dt.tzinfo is None:
-                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            # Isolate data type validation strictly within the live entry iteration loop
+            if isinstance(start, datetime):
+                start_dt = start if start.tzinfo else start.replace(tzinfo=timezone.utc)
+            else:
+                start_dt = datetime.combine(start, datetime.min.time()).replace(tzinfo=timezone.utc)
 
-            end_dt = end if isinstance(end, datetime) else (datetime.combine(end, datetime.min.time()).replace(tzinfo=timezone.utc) if end else None)
-            if end_dt and end_dt.tzinfo is None:
-                end_dt = end_dt.replace(tzinfo=timezone.utc)
+            if end:
+                if isinstance(end, datetime):
+                    end_dt = end if end.tzinfo else end.replace(tzinfo=timezone.utc)
+                else:
+                    end_dt = datetime.combine(end, datetime.min.time()).replace(tzinfo=timezone.utc)
+            else:
+                end_dt = None
 
-            # Filter: If an event has fully finished in the past relative to right now, skip it
+            # Filter out entries that have fully expired in relation to the active UTC server clock
             if end_dt and end_dt < now:
                 continue
 
-            # Safely build string representations based on underlying calendar layout formats
+            # Generate strings dynamically based on the original structure format
             if isinstance(start, datetime):
                 start_str = start.strftime("%b %d, %H:%M UTC")
             else:
@@ -125,7 +129,6 @@ def get_upcoming_events():
 
             output.append(f"• {summary}: {start_str} to {end_str}")
 
-        # Deduplicate repeating objects and enforce response size thresholds
         unique_output = list(dict.fromkeys(output))
         return "\n".join(unique_output[:15]) if unique_output else "No upcoming events scheduled in the next 14 days."
 
