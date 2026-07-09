@@ -11,6 +11,7 @@ from flask import Flask
 from threading import Thread
 import requests
 from icalendar import Calendar
+import recurring_ical_events
 
 # --- 1. SECURE CONFIGURATION & CHANNEL MAPPING ---
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -80,40 +81,41 @@ def get_upcoming_events():
         cal = Calendar.from_ical(response.text)
         
         now = datetime.now(timezone.utc)
-        events = []
+        # Look ahead exactly 14 days
+        end_date = now + timedelta(days=14)
         
-        for component in cal.walk('vevent'):
+        # This magical library unrolls all repeating rules into actual current dates!
+        events = recurring_ical_events.of(cal).between(now, end_date)
+        
+        output = []
+        for component in events:
             summary = str(component.get('summary'))
             start = component.get('dtstart').dt
             end = component.get('dtend').dt if component.get('dtend') else None
             
-            # Unify date and datetime formats for safe comparison
+            # Format Dates Cleanly
             if type(start) is dt_lib.date:
-                start = dt_lib.datetime.combine(start, dt_lib.datetime.min.time()).replace(tzinfo=timezone.utc)
-            elif start.tzinfo is None:
-                start = start.replace(tzinfo=timezone.utc)
+                start_str = start.strftime("%b %d")
+            else:
+                start_str = start.strftime("%b %d, %H:%M UTC")
                 
             if end:
                 if type(end) is dt_lib.date:
-                    end = dt_lib.datetime.combine(end, dt_lib.datetime.min.time()).replace(tzinfo=timezone.utc)
-                elif end.tzinfo is None:
-                    end = end.replace(tzinfo=timezone.utc)
+                    # In ICS, all-day events technically end at 00:00 the *next* day. We subtract 1 to fix the display.
+                    end_display = end - timedelta(days=1)
+                    end_str = end_display.strftime("%b %d")
+                else:
+                    end_str = end.strftime("%b %d, %H:%M UTC")
+            else:
+                end_str = "TBD"
+                
+            output.append(f"• {summary}: {start_str} to {end_str}")
             
-            # Filter: Only keep active events or events in the next 14 days
-            if end and end > now and (start - now).days <= 14:
-                events.append({"name": summary, "start": start, "end": end})
-            elif not end and start > now and (start - now).days <= 14:
-                events.append({"name": summary, "start": start, "end": None})
+        # Deduplicate the list (recurring libraries sometimes print overlaps)
+        unique_output = list(dict.fromkeys(output))
         
-        events.sort(key=lambda x: x['start'])
+        return "\n".join(unique_output[:15]) if unique_output else "No upcoming events scheduled in the next 14 days."
         
-        output = []
-        for e in events[:15]: 
-            start_str = e['start'].strftime("%b %d, %H:%M UTC")
-            end_str = e['end'].strftime("%b %d, %H:%M UTC") if e['end'] else "TBD"
-            output.append(f"• {e['name']}: {start_str} to {end_str}")
-            
-        return "\n".join(output) if output else "No upcoming events scheduled in the next 14 days."
     except Exception as e:
         print(f"Calendar Fetch Error: {e}")
         return "Live calendar data is temporarily offline."
