@@ -82,7 +82,7 @@ def get_upcoming_events():
 
         now = datetime.now(timezone.utc)
         
-        # FIXED: Lookback window widened to 14 days to pull in active multi-day events that started earlier
+        # Lookback window widened to 14 days to pull in active multi-day events that started earlier
         start_date = now.date() - timedelta(days=14)  
         end_date = now.date() + timedelta(days=14)
 
@@ -347,6 +347,8 @@ async def on_message(message):
 
                     except Exception as e:
                         error_msg = str(e)
+                        
+                        # Handle server availability lags
                         if "503" in error_msg or "UNAVAILABLE" in error_msg:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(2)
@@ -354,9 +356,15 @@ async def on_message(message):
                             else:
                                 await message.channel.send("📡 **Comms Jammed:** Google's AI servers are currently overloaded. Please try again in a minute, Spartan.")
                                 break
+                                
+                        # BRAND NEW ADJUSTMENT: Handle burst rate limit throttling smoothly
                         elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                            await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again.")
-                            break
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(4)  # Take a 4-second breath for quota to recycle
+                                continue
+                            else:
+                                await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again.")
+                                break
                         else:
                             await message.channel.send(f"❌ Systems Error: {error_msg}")
                             break
