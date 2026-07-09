@@ -5,9 +5,12 @@ from google import genai
 from google.genai import types
 import asyncio
 import time
-from datetime import datetime, time as dt_time, timezone
+import datetime as dt_lib
+from datetime import datetime, time as dt_time, timezone, timedelta
 from flask import Flask
 from threading import Thread
+import requests
+from icalendar import Calendar
 
 # --- 1. SECURE CONFIGURATION & CHANNEL MAPPING ---
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -40,7 +43,7 @@ def home():
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
-# --- 3. THE DYNAMIC CLOUD ROUTER & MEMORY CACHE ---
+# --- 3. DYNAMIC CLOUD ROUTER, CALENDAR & CACHE ---
 response_cache = {}
 
 def get_cloud_file_id(user_message):
@@ -53,11 +56,10 @@ def get_cloud_file_id(user_message):
     keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
     keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
     
-    # NEW SECURE FILE ID MAPPINGS
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
         return "files/m2vqx2bq57bu" # alliance_rule.txt
     elif any(w in msg for w in keywords_tactics):
-        return "files/m2vqx2bq57bu" # Tactics routed to alliance_rule.txt for now
+        return "files/m2vqx2bq57bu" 
     elif any(w in msg for w in keywords_stats):
         return "files/0o9zm65f7mjg" # Base stats Structure.txt
     elif any(w in msg for w in keywords_skills):
@@ -70,6 +72,51 @@ def get_cloud_file_id(user_message):
         return "files/hc1247j4ayzs" # Lore & Backstory.txt
     else:
         return "files/8d6uq3g9sbbc" # Kingshot_heroes.txt (Default)
+
+def get_upcoming_events():
+    try:
+        url = "https://calendar.google.com/calendar/ical/e6196c2703be23e87e027067c77f8990c4434a659a08fc9c3612f60c83b42c0e%40group.calendar.google.com/public/basic.ics"
+        response = requests.get(url, timeout=5)
+        cal = Calendar.from_ical(response.text)
+        
+        now = datetime.now(timezone.utc)
+        events = []
+        
+        for component in cal.walk('vevent'):
+            summary = str(component.get('summary'))
+            start = component.get('dtstart').dt
+            end = component.get('dtend').dt if component.get('dtend') else None
+            
+            # Unify date and datetime formats for safe comparison
+            if type(start) is dt_lib.date:
+                start = dt_lib.datetime.combine(start, dt_lib.datetime.min.time()).replace(tzinfo=timezone.utc)
+            elif start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+                
+            if end:
+                if type(end) is dt_lib.date:
+                    end = dt_lib.datetime.combine(end, dt_lib.datetime.min.time()).replace(tzinfo=timezone.utc)
+                elif end.tzinfo is None:
+                    end = end.replace(tzinfo=timezone.utc)
+            
+            # Filter: Only keep active events or events in the next 14 days
+            if end and end > now and (start - now).days <= 14:
+                events.append({"name": summary, "start": start, "end": end})
+            elif not end and start > now and (start - now).days <= 14:
+                events.append({"name": summary, "start": start, "end": None})
+        
+        events.sort(key=lambda x: x['start'])
+        
+        output = []
+        for e in events[:15]: 
+            start_str = e['start'].strftime("%b %d, %H:%M UTC")
+            end_str = e['end'].strftime("%b %d, %H:%M UTC") if e['end'] else "TBD"
+            output.append(f"• {e['name']}: {start_str} to {end_str}")
+            
+        return "\n".join(output) if output else "No upcoming events scheduled in the next 14 days."
+    except Exception as e:
+        print(f"Calendar Fetch Error: {e}")
+        return "Live calendar data is temporarily offline."
 
 # --- 4. THE TIMEKEEPER: AUTOMATED DAILY ALARMS ---
 utc_warning = dt_time(hour=23, minute=50, tzinfo=timezone.utc)
@@ -127,7 +174,7 @@ async def run_event_timer(channel_id, hours, event_name, dm_channel):
 async def on_ready():
     print(f"👑 Zeus is online, anchored on Render.")
     print(f"⚡ Core: Gemini 2.5 Flash-Lite (250K TPM / 10 RPM limit active).")
-    print(f"🛡️ Memory Cache Defense Systems: ONLINE.")
+    print(f"🛡️ Memory Cache & Event Feeds: ONLINE.")
     if not daily_reset_warning.is_running():
         daily_reset_warning.start()
     if not daily_reset_alert.is_running():
@@ -145,7 +192,6 @@ async def on_message(message):
         user_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
             
         if user_text:
-            # 1. Directory Interceptor
             meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features", "what model"]
             if any(w in user_text.lower() for w in meta_keywords):
                 menu = (
@@ -153,21 +199,20 @@ async def on_message(message):
                     "I am the KNG Spartan Rage AI, currently powered by the **Gemini 2.5 Flash-Lite** core.\n"
                     "To access my cloud databanks, ask me about:\n\n"
                     "• **Alliance Directives:** Ask about *rules, missions,* or *Kratos*.\n"
-                    "• **Tactics:** Ask about *bear hunt, formations,* or *strategy*.\n"
+                    "• **Tactics & Schedules:** Ask about *events, calendars, formations,* or *strategy*.\n"
                     "• **Hero Stats:** Ask about *health, attack, defense,* or *expedition*.\n"
                     "• **Hero Skills:** Ask about *skills, abilities, stuns,* or *heals*.\n"
                     "• **Upgrades:** Ask about *star levels, tiers,* or *upgrade costs*.\n"
                     "• **Acquisition:** Ask about *how to get, unlock,* or *recruit* heroes.\n"
                     "• **Lore:** Ask about a hero's *lore, backstory,* or *history*.\n\n"
                     "*(Commander Kratos can also DM me commands via natural language!)*\n\n"
-                    "*Example:* `What are the upgrade requirements for Ava?`"
+                    "*Example:* `What events are happening tomorrow?`"
                 )
                 await message.channel.send(menu)
                 return
 
             async with message.channel.typing():
-                # 2. NLP Command Interceptor
-                if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event", "timer", "remind", "set", "broadcast", "announce", "send"]):
+                if is_private_dm and any(w in user_text.lower() for w in ["schedule", "event timer", "remind", "set", "broadcast", "announce", "send"]):
                     try:
                         current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                         nlp_sys_instruct = (
@@ -218,10 +263,10 @@ async def on_message(message):
                     except Exception as e:
                         print(f"NLP Parser Error: {e}")
 
-                # 3. Conversational RAG & Search Processing (WITH RETRY LOGIC)
                 cache_key = user_text.lower()
-                time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock"]
+                time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock", "event", "calendar", "upcoming", "tomorrow", "schedule"]
                 is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
+                is_event_query = any(w in cache_key for w in ["event", "calendar", "upcoming", "tomorrow", "schedule"])
                 
                 if not is_time_sensitive and cache_key in response_cache:
                     await message.channel.send(response_cache[cache_key])
@@ -234,6 +279,12 @@ async def on_message(message):
                     print(f"File Retrieval Error: {e}")
                     uploaded_file = None
                 
+                # Fetch calendar data silently if the user is asking about events
+                calendar_context = ""
+                if is_event_query:
+                    cal_data = get_upcoming_events()
+                    calendar_context = f"\n\nLIVE KINGSHOT EVENT CALENDAR DATA (Use this to answer scheduling questions):\n{cal_data}"
+                
                 current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                 sys_instruct = (
                     f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
@@ -244,6 +295,7 @@ async def on_message(message):
                     f"If asked, use the current time to calculate the exact hours and minutes remaining until the reset. "
                     f"IMPORTANT: Answer game queries accurately based on the provided document context. "
                     f"If the user asks a real-world question outside of game data, use the Google Search tool."
+                    f"{calendar_context}"
                 )
                 
                 config = types.GenerateContentConfig(
@@ -257,7 +309,6 @@ async def on_message(message):
                     ]
                 )
                 
-                # THE FIX: 3-Strike Retry System for Google Server Drops
                 max_retries = 3
                 for attempt in range(max_retries):
                     try:
@@ -276,11 +327,10 @@ async def on_message(message):
                         else:
                             await message.channel.send("⚠️ Zeus returned an empty response.")
                             
-                        break  # Success! Exit the loop.
+                        break  
                         
                     except Exception as e:
                         error_msg = str(e)
-                        # If it's a 503 Google overload, wait 2 seconds and try again quietly
                         if "503" in error_msg or "UNAVAILABLE" in error_msg:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(2)
@@ -288,11 +338,9 @@ async def on_message(message):
                             else:
                                 await message.channel.send("📡 **Comms Jammed:** Google's AI servers are currently overloaded. Please try again in a minute, Spartan.")
                                 break
-                        # If it's a 429 quota issue, tell them to wait
                         elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
                             await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again.")
                             break
-                        # For any other weird error, print it
                         else:
                             await message.channel.send(f"❌ Systems Error: {error_msg}")
                             break
