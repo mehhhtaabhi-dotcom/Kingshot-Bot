@@ -218,75 +218,84 @@ async def on_message(message):
                     except Exception as e:
                         print(f"NLP Parser Error: {e}")
 
-                # 3. Conversational RAG & Search Processing (WITH MEMORY CACHE)
-                try:
-                    cache_key = user_text.lower()
-                    time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock"]
-                    is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
-                    
-                    if not is_time_sensitive and cache_key in response_cache:
-                        await message.channel.send(response_cache[cache_key])
-                        return
+                # 3. Conversational RAG & Search Processing (WITH RETRY LOGIC)
+                cache_key = user_text.lower()
+                time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock"]
+                is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
+                
+                if not is_time_sensitive and cache_key in response_cache:
+                    await message.channel.send(response_cache[cache_key])
+                    return
 
+                try:
                     target_file_id = get_cloud_file_id(user_text)
                     uploaded_file = client.files.get(name=target_file_id)
-                    
-                    current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-                    sys_instruct = (
-                        f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
-                        f"Speak naturally and politely like a helpful human alliance member, while keeping a loyal Spartan flavor. "
-                        f"If asked what model you are running on, confirm you are powered by the Gemini 2.5 Flash-Lite core. "
-                        f"If a user says hello, greet them warmly. If they say they don't need help, reply naturally (e.g., 'Understood, let me know if you need anything!'). "
-                        f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC. "
-                        f"If asked, use the current time to calculate the exact hours and minutes remaining until the reset. "
-                        f"IMPORTANT: Answer game queries accurately based on the provided document context. "
-                        f"If the user asks a real-world question outside of game data, use the Google Search tool."
-                    )
-                    
-                    # SAFETY OVERRIDE ENABLED
-                    config = types.GenerateContentConfig(
-                        system_instruction=sys_instruct,
-                        tools=[{"google_search": {}}],
-                        safety_settings=[
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
-                            ),
-                        ]
-                    )
-                    
-                    response = await client.aio.models.generate_content(
-                        model='gemini-2.5-flash-lite',
-                        contents=[uploaded_file, user_text],
-                        config=config
-                    )
-                    
-                    if response.text:
-                        if not is_time_sensitive:
-                            response_cache[cache_key] = response.text
-                        await message.channel.send(response.text)
-                    else:
-                        await message.channel.send("⚠️ Zeus returned an empty response.")
-                
-                # UPDATED RATE LIMIT & EXCEPTION HANDLER
                 except Exception as e:
-                    error_msg = str(e)
-                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                        await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again, Spartan.")
-                    else:
-                        await message.channel.send(f"❌ Systems Error: {error_msg}")
+                    print(f"File Retrieval Error: {e}")
+                    uploaded_file = None
+                
+                current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+                sys_instruct = (
+                    f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
+                    f"Speak naturally and politely like a helpful human alliance member, while keeping a loyal Spartan flavor. "
+                    f"If asked what model you are running on, confirm you are powered by the Gemini 2.5 Flash-Lite core. "
+                    f"If a user says hello, greet them warmly. If they say they don't need help, reply naturally (e.g., 'Understood, let me know if you need anything!'). "
+                    f"The current live server time is {current_live_utc}. The Kingshot global daily reset occurs at exactly 00:00 UTC. "
+                    f"If asked, use the current time to calculate the exact hours and minutes remaining until the reset. "
+                    f"IMPORTANT: Answer game queries accurately based on the provided document context. "
+                    f"If the user asks a real-world question outside of game data, use the Google Search tool."
+                )
+                
+                config = types.GenerateContentConfig(
+                    system_instruction=sys_instruct,
+                    tools=[{"google_search": {}}],
+                    safety_settings=[
+                        types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                        types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                        types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                        types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                    ]
+                )
+                
+                # THE FIX: 3-Strike Retry System for Google Server Drops
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        contents_payload = [uploaded_file, user_text] if uploaded_file else [user_text]
+                        
+                        response = await client.aio.models.generate_content(
+                            model='gemini-2.5-flash-lite',
+                            contents=contents_payload,
+                            config=config
+                        )
+                        
+                        if response.text:
+                            if not is_time_sensitive:
+                                response_cache[cache_key] = response.text
+                            await message.channel.send(response.text)
+                        else:
+                            await message.channel.send("⚠️ Zeus returned an empty response.")
+                            
+                        break  # Success! Exit the loop.
+                        
+                    except Exception as e:
+                        error_msg = str(e)
+                        # If it's a 503 Google overload, wait 2 seconds and try again quietly
+                        if "503" in error_msg or "UNAVAILABLE" in error_msg:
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(2)
+                                continue
+                            else:
+                                await message.channel.send("📡 **Comms Jammed:** Google's AI servers are currently overloaded. Please try again in a minute, Spartan.")
+                                break
+                        # If it's a 429 quota issue, tell them to wait
+                        elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                            await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again.")
+                            break
+                        # For any other weird error, print it
+                        else:
+                            await message.channel.send(f"❌ Systems Error: {error_msg}")
+                            break
 
 # --- 6. IGNITION ---
 if __name__ == "__main__":
