@@ -82,8 +82,8 @@ def get_upcoming_events():
 
         now = datetime.now(timezone.utc)
         
-        # THE CORE FIX: Boundaries are standardized to clean date objects to safely handle mixed all-day streams
-        start_date = now.date() - timedelta(days=2)  
+        # FIXED: Lookback window widened to 14 days to pull in active multi-day events that started earlier
+        start_date = now.date() - timedelta(days=14)  
         end_date = now.date() + timedelta(days=14)
 
         events = recurring_ical_events.of(cal).between(start_date, end_date)
@@ -94,7 +94,6 @@ def get_upcoming_events():
             start = component.get('dtstart').dt
             end = component.get('dtend').dt if component.get('dtend') else None
 
-            # Isolate data type validation strictly within the live entry iteration loop
             if isinstance(start, datetime):
                 start_dt = start if start.tzinfo else start.replace(tzinfo=timezone.utc)
             else:
@@ -108,11 +107,10 @@ def get_upcoming_events():
             else:
                 end_dt = None
 
-            # Filter out entries that have fully expired in relation to the active UTC server clock
+            # Filter: Skip events that completely ended in the past
             if end_dt and end_dt < now:
                 continue
 
-            # Generate strings dynamically based on the original structure format
             if isinstance(start, datetime):
                 start_str = start.strftime("%b %d, %H:%M UTC")
             else:
