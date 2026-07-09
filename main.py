@@ -78,17 +78,16 @@ def get_upcoming_events():
     try:
         url = "https://calendar.google.com/calendar/ical/e6196c2703be23e87e027067c77f8990c4434a659a08fc9c3612f60c83b42c0e%40group.calendar.google.com/public/basic.ics"
         response = requests.get(url, timeout=5)
-        
-        # FIXED: Core engine now accepts raw streaming binary bytes
         cal = Calendar.from_ical(response.content)
 
         now = datetime.now(timezone.utc)
         
-        # FIXED: Boundaries aligned to structural date interfaces to capture all-day entries
-        start_date = now.date()
-        end_date = start_date + timedelta(days=14)
+        # LOOKBACK WINDOW: Checks 7 days prior to capture multi-day events that are currently live
+        start_bound = now - timedelta(days=7)
+        end_bound = now + timedelta(days=14)
 
-        events = recurring_ical_events.of(cal).between(start_date, end_date)
+        # FIXED: Pass strict timezone-aware datetimes to correctly capture timed iCal items
+        events = recurring_ical_events.of(cal).between(start_bound, end_bound)
 
         output = []
         for component in events:
@@ -96,28 +95,37 @@ def get_upcoming_events():
             start = component.get('dtstart').dt
             end = component.get('dtend').dt if component.get('dtend') else None
 
-            # FIXED: Type verification matrix prevents datetime attribute layout breaks
-            if isinstance(start, dt_lib.datetime):
+            # Unify formats to UTC datetime objects for accurate expiration evaluations
+            start_dt = start if isinstance(start, datetime) else datetime.combine(start, datetime.min.time()).replace(tzinfo=timezone.utc)
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+
+            end_dt = end if isinstance(end, datetime) else (datetime.combine(end, datetime.min.time()).replace(tzinfo=timezone.utc) if end else None)
+            if end_dt and end_dt.tzinfo is None:
+                end_dt = end_dt.replace(tzinfo=timezone.utc)
+
+            # Filter: If an event has fully finished in the past relative to right now, skip it
+            if end_dt and end_dt < now:
+                continue
+
+            # Safely build string representations based on underlying calendar layout formats
+            if isinstance(start, datetime):
                 start_str = start.strftime("%b %d, %H:%M UTC")
-            elif isinstance(start, dt_lib.date):
-                start_str = start.strftime("%b %d")
             else:
-                start_str = str(start)
+                start_str = start.strftime("%b %d")
 
             if end:
-                if isinstance(end, dt_lib.datetime):
+                if isinstance(end, datetime):
                     end_str = end.strftime("%b %d, %H:%M UTC")
-                elif isinstance(end, dt_lib.date):
-                    # Compensates for structural calendar end-boundary tracking exclusions
+                else:
                     end_display = end - timedelta(days=1)
                     end_str = end_display.strftime("%b %d")
-                else:
-                    end_str = str(end)
             else:
                 end_str = "TBD"
 
             output.append(f"• {summary}: {start_str} to {end_str}")
 
+        # Deduplicate repeating objects and enforce response size thresholds
         unique_output = list(dict.fromkeys(output))
         return "\n".join(unique_output[:15]) if unique_output else "No upcoming events scheduled in the next 14 days."
 
