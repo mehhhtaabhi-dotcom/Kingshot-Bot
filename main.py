@@ -56,6 +56,7 @@ def get_cloud_file_id(user_message):
     keywords_acquire = ["get", "acquire", "unlock", "find", "roulette", "governor", "recruitment", "pack", "shop", "shard"]
     keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
     keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
+    keywords_heroes = ["hero", "best hero", "alcar", "jabel", "jaegar", "chenko", "ava"]
 
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
         return "files/m2vqx2bq57bu" # alliance_rule.txt
@@ -71,8 +72,11 @@ def get_cloud_file_id(user_message):
         return "files/39vqs1sf1tch" # Acquisition Methods.txt
     elif any(w in msg for w in keywords_lore):
         return "files/hc1247j4ayzs" # Lore & Backstory.txt
+    elif any(w in msg for w in keywords_heroes):
+        return "files/8d6uq3g9sbbc" # Kingshot_heroes.txt
     else:
-        return "files/8d6uq3g9sbbc" # Kingshot_heroes.txt (Default)
+        # OPTIMIZATION: Returns None for general queries/calendar checks to protect token limits
+        return None
 
 def get_upcoming_events():
     try:
@@ -81,8 +85,6 @@ def get_upcoming_events():
         cal = Calendar.from_ical(response.content)
 
         now = datetime.now(timezone.utc)
-        
-        # Lookback window widened to 14 days to pull in active multi-day events that started earlier
         start_date = now.date() - timedelta(days=14)  
         end_date = now.date() + timedelta(days=14)
 
@@ -107,7 +109,6 @@ def get_upcoming_events():
             else:
                 end_dt = None
 
-            # Filter: Skip events that completely ended in the past
             if end_dt and end_dt < now:
                 continue
 
@@ -288,14 +289,16 @@ async def on_message(message):
                     await message.channel.send(response_cache[cache_key])
                     return
 
-                try:
-                    target_file_id = get_cloud_file_id(user_text)
-                    uploaded_file = client.files.get(name=target_file_id)
-                except Exception as e:
-                    print(f"File Retrieval Error: {e}")
-                    uploaded_file = None
+                # FIXED: Only fetch file metadata if a file routing match actually occurs
+                uploaded_file = None
+                target_file_id = get_cloud_file_id(user_text)
+                if target_file_id:
+                    try:
+                        uploaded_file = client.files.get(name=target_file_id)
+                    except Exception as e:
+                        print(f"File Retrieval Error: {e}")
+                        uploaded_file = None
 
-                # Fetch calendar data silently if the user is asking about events
                 calendar_context = ""
                 if is_event_query:
                     cal_data = get_upcoming_events()
@@ -347,8 +350,6 @@ async def on_message(message):
 
                     except Exception as e:
                         error_msg = str(e)
-                        
-                        # Handle server availability lags
                         if "503" in error_msg or "UNAVAILABLE" in error_msg:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(2)
@@ -356,11 +357,9 @@ async def on_message(message):
                             else:
                                 await message.channel.send("📡 **Comms Jammed:** Google's AI servers are currently overloaded. Please try again in a minute, Spartan.")
                                 break
-                                
-                        # BRAND NEW ADJUSTMENT: Handle burst rate limit throttling smoothly
                         elif "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
                             if attempt < max_retries - 1:
-                                await asyncio.sleep(4)  # Take a 4-second breath for quota to recycle
+                                await asyncio.sleep(4)  
                                 continue
                             else:
                                 await message.channel.send("⏳ **Comms Jammed:** I am receiving too many tactical requests at once. Please wait 60 seconds and ask me again.")
