@@ -49,14 +49,14 @@ response_cache = {}
 
 def get_cloud_file_id(user_message):
     msg = user_message.lower()
-    
+
     keywords_stats = ["stat", "attack", "defense", "def ", "health", "conquest", "expedition", "lethality"]
     keywords_skills = ["skill", "ability", "glorious mark", "combo", "passive", "special weapon", "stun", "aoe", "heal"]
     keywords_upgrade = ["upgrade", "star", "tier", "requirement", "table", "level up", "cost"]
     keywords_acquire = ["get", "acquire", "unlock", "find", "roulette", "governor", "recruitment", "pack", "shop", "shard"]
     keywords_lore = ["lore", "story", "backstory", "history", "background", "past", "who is"]
     keywords_tactics = ["bear", "hunt", "formation", "kvk", "tactic", "strategy"]
-    
+
     if any(w in msg for w in ["alliance", "watchtower", "mission", "rule", "kratos"]):
         return "files/m2vqx2bq57bu" # alliance_rule.txt
     elif any(w in msg for w in keywords_tactics):
@@ -78,44 +78,49 @@ def get_upcoming_events():
     try:
         url = "https://calendar.google.com/calendar/ical/e6196c2703be23e87e027067c77f8990c4434a659a08fc9c3612f60c83b42c0e%40group.calendar.google.com/public/basic.ics"
         response = requests.get(url, timeout=5)
-        cal = Calendar.from_ical(response.text)
         
+        # FIXED: Core engine now accepts raw streaming binary bytes
+        cal = Calendar.from_ical(response.content)
+
         now = datetime.now(timezone.utc)
-        # Look ahead exactly 14 days
-        end_date = now + timedelta(days=14)
         
-        # This magical library unrolls all repeating rules into actual current dates!
-        events = recurring_ical_events.of(cal).between(now, end_date)
-        
+        # FIXED: Boundaries aligned to structural date interfaces to capture all-day entries
+        start_date = now.date()
+        end_date = start_date + timedelta(days=14)
+
+        events = recurring_ical_events.of(cal).between(start_date, end_date)
+
         output = []
         for component in events:
             summary = str(component.get('summary'))
             start = component.get('dtstart').dt
             end = component.get('dtend').dt if component.get('dtend') else None
-            
-            # Format Dates Cleanly
-            if type(start) is dt_lib.date:
+
+            # FIXED: Type verification matrix prevents datetime attribute layout breaks
+            if isinstance(start, dt_lib.datetime):
+                start_str = start.strftime("%b %d, %H:%M UTC")
+            elif isinstance(start, dt_lib.date):
                 start_str = start.strftime("%b %d")
             else:
-                start_str = start.strftime("%b %d, %H:%M UTC")
-                
+                start_str = str(start)
+
             if end:
-                if type(end) is dt_lib.date:
-                    # In ICS, all-day events technically end at 00:00 the *next* day. We subtract 1 to fix the display.
+                if isinstance(end, dt_lib.datetime):
+                    end_str = end.strftime("%b %d, %H:%M UTC")
+                elif isinstance(end, dt_lib.date):
+                    # Compensates for structural calendar end-boundary tracking exclusions
                     end_display = end - timedelta(days=1)
                     end_str = end_display.strftime("%b %d")
                 else:
-                    end_str = end.strftime("%b %d, %H:%M UTC")
+                    end_str = str(end)
             else:
                 end_str = "TBD"
-                
+
             output.append(f"• {summary}: {start_str} to {end_str}")
-            
-        # Deduplicate the list (recurring libraries sometimes print overlaps)
+
         unique_output = list(dict.fromkeys(output))
-        
         return "\n".join(unique_output[:15]) if unique_output else "No upcoming events scheduled in the next 14 days."
-        
+
     except Exception as e:
         print(f"Calendar Fetch Error: {e}")
         return "Live calendar data is temporarily offline."
@@ -192,7 +197,7 @@ async def on_message(message):
 
     if is_private_dm or is_mentioned:
         user_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
-            
+
         if user_text:
             meta_keywords = ["knowledge", "what can you do", "help", "menu", "who are you", "features", "what model"]
             if any(w in user_text.lower() for w in meta_keywords):
@@ -226,16 +231,16 @@ async def on_message(message):
                             "If they do not specify a channel, default to 'alliance'. "
                             "If the text is just a normal question and NOT a command, output NO_COMMAND."
                         )
-                        
+
                         config = types.GenerateContentConfig(system_instruction=nlp_sys_instruct)
                         parse_response = await client.aio.models.generate_content(
                             model='gemini-2.5-flash-lite',
                             contents=user_text,
                             config=config
                         )
-                        
+
                         bot_reply = parse_response.text.strip()
-                        
+
                         if bot_reply.startswith("SCHEDULE|"):
                             parts = bot_reply.split("|")
                             event_name = parts[1]
@@ -244,12 +249,12 @@ async def on_message(message):
                             target_id = CHANNELS.get(channel_key, CHANNELS["event_alert"])
                             asyncio.create_task(run_event_timer(target_id, hours, event_name, message.channel))
                             return 
-                            
+
                         elif bot_reply.startswith("BROADCAST|"):
                             parts = bot_reply.split("|")
                             message_to_send = parts[1]
                             channel_keys = parts[2].split(",")
-                            
+
                             success_channels = []
                             for key in channel_keys:
                                 key = key.strip()
@@ -258,7 +263,7 @@ async def on_message(message):
                                 if target_channel:
                                     await target_channel.send(f"📢 **ALLIANCE BROADCAST:**\n{message_to_send}")
                                     success_channels.append(key)
-                                    
+
                             await message.channel.send(f"✅ Message successfully broadcasted to: {', '.join(success_channels)}")
                             return
 
@@ -269,7 +274,7 @@ async def on_message(message):
                 time_sensitive_words = ["time", "reset", "when", "how long", "left", "until", "today", "now", "clock", "event", "calendar", "upcoming", "tomorrow", "schedule"]
                 is_time_sensitive = any(w in cache_key for w in time_sensitive_words)
                 is_event_query = any(w in cache_key for w in ["event", "calendar", "upcoming", "tomorrow", "schedule"])
-                
+
                 if not is_time_sensitive and cache_key in response_cache:
                     await message.channel.send(response_cache[cache_key])
                     return
@@ -280,13 +285,13 @@ async def on_message(message):
                 except Exception as e:
                     print(f"File Retrieval Error: {e}")
                     uploaded_file = None
-                
+
                 # Fetch calendar data silently if the user is asking about events
                 calendar_context = ""
                 if is_event_query:
                     cal_data = get_upcoming_events()
                     calendar_context = f"\n\nLIVE KINGSHOT EVENT CALENDAR DATA (Use this to answer scheduling questions):\n{cal_data}"
-                
+
                 current_live_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
                 sys_instruct = (
                     f"You are Zeus, the loyal, cooperative, and conversational tactical AI assistant for KNG Spartan Rage. "
@@ -299,7 +304,7 @@ async def on_message(message):
                     f"If the user asks a real-world question outside of game data, use the Google Search tool."
                     f"{calendar_context}"
                 )
-                
+
                 config = types.GenerateContentConfig(
                     system_instruction=sys_instruct,
                     tools=[{"google_search": {}}],
@@ -310,27 +315,27 @@ async def on_message(message):
                         types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
                     ]
                 )
-                
+
                 max_retries = 3
                 for attempt in range(max_retries):
                     try:
                         contents_payload = [uploaded_file, user_text] if uploaded_file else [user_text]
-                        
+
                         response = await client.aio.models.generate_content(
                             model='gemini-2.5-flash-lite',
                             contents=contents_payload,
                             config=config
                         )
-                        
+
                         if response.text:
                             if not is_time_sensitive:
                                 response_cache[cache_key] = response.text
                             await message.channel.send(response.text)
                         else:
                             await message.channel.send("⚠️ Zeus returned an empty response.")
-                            
+
                         break  
-                        
+
                     except Exception as e:
                         error_msg = str(e)
                         if "503" in error_msg or "UNAVAILABLE" in error_msg:
